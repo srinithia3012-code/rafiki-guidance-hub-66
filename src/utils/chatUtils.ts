@@ -2,12 +2,21 @@
 import { GuidanceCategory } from "@/services/ai";
 
 export const getCategoryWelcomeMessage = (category: GuidanceCategory): string => {
-  const welcomeMessages: Record<GuidanceCategory, string> = {
-    career: "Hi there! I'm Rafiki, your AI career advisor. I can help with career planning, job searches, resume building, and interview preparation. What career-related questions do you have today?",
-    academic: "Hello! I'm Rafiki, your AI academic advisor. I can help with study strategies, course selections, research skills, and academic planning. How can I assist with your academic journey today?",
-    mental_health: "Hi, I'm Rafiki, your AI wellbeing assistant. I'm here to provide support for emotional challenges, stress, and mental wellness. Remember, while I can offer guidance, I'm not a replacement for professional mental health services. How are you feeling today?",
-    stress_management: "Hello! I'm Rafiki, your AI stress management coach. I can suggest techniques for managing academic pressure, anxiety, and building resilience. What's causing you stress right now?",
-    general: "Hello! I'm Rafiki, your AI guidance counselor. I'm here to help with academics, career planning, and personal wellbeing. What would you like guidance on today?",
-  };
-  return welcomeMessages[category];
+  switch (category) {
+    case "academic":
+      return "Hello! I'm Rafiki, your academic guidance assistant. I can help you with study strategies, academic planning, and educational resources. What academic questions do you have today?";
+    
+    case "career":
+      return "Hello! I'm Rafiki, your career guidance assistant. I can help with career planning, job search strategies, and professional development. What career questions can I help you with?";
+    
+    case "mental_health":
+      return "Hello! I'm Rafiki, here to support your mental wellbeing. I can provide resources, coping strategies, and guidance for maintaining good mental health. How can I support you today?";
+    
+    case "stress_management":
+      return "Hello! I'm Rafiki, your stress management guide. I can help with relaxation techniques, time management, and ways to reduce stress. What's causing you stress that I can help with?";
+    
+    case "general":
+    default:
+      return "Hello! I'm Rafiki, your AI guidance counselor. I'm here to assist with academic, career, and wellbeing questions. How can I help you today?";
+  }
 };
