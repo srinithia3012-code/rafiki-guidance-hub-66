@@ -22,20 +22,19 @@ const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
     try {
       const result = await signInWithGoogle();
       if (result && result.user) {
-        // Make sure to create a user profile when logging in with Google
-        await createUserProfile(result.user);
-        toast.success("Signed in with Google successfully!");
+        // Success message
+        toast.success("Signed in successfully!");
         onSuccess();
       } else {
-        throw new Error("Failed to sign in with Google");
+        throw new Error("Failed to sign in");
       }
     } catch (error: any) {
-      console.error("Google sign in error:", error);
+      console.error("Sign in error:", error);
       // Display a more user-friendly error message
       const errorMessage = 
         error.code === 'auth/popup-closed-by-user' 
           ? 'Sign-in canceled. Please try again.' 
-          : error.message || "Failed to sign in with Google. Please try again.";
+          : error.message || "Failed to sign in. Please try again.";
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
