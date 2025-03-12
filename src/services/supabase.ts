@@ -44,6 +44,18 @@ export const signInWithGoogle = async () => {
   return data;
 };
 
+export const signInWithLinkedIn = async () => {
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'linkedin_oidc',
+    options: {
+      redirectTo: `${window.location.origin}/auth/callback`
+    }
+  });
+  
+  if (error) throw error;
+  return data;
+};
+
 export const signOut = async () => {
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
@@ -60,9 +72,9 @@ export const getSession = async (): Promise<Session | null> => {
 };
 
 export const onAuthChange = (callback: (session: Session | null) => void) => {
-  return supabase.auth.onAuthStateChange((_, session) => {
+  return supabase.auth.onAuthStateChange((_event, session) => {
     callback(session);
-  });
+  }).data.subscription;
 };
 
 // User profile functions
@@ -91,17 +103,20 @@ export const updateUserProfile = async (userId: string, updates: any) => {
   return data;
 };
 
-// Chat functions (migrated from Firebase)
+// Chat functions
 export const saveChat = async (userId: string, message: string, response: string, category: string) => {
   try {
-    const { error } = await supabase.from('chats').insert({
-      user_id: userId,
-      message,
-      response,
-      category,
-    });
-    
-    if (error) throw error;
+    // This is a placeholder - we need to create a 'chats' table in Supabase to use this
+    toast.info("Chat history functionality will be available soon");
+    console.log("Chat would be saved for user:", userId, { message, response, category });
+    // Once we have a chats table, we would use:
+    // const { error } = await supabase.from('chats').insert({
+    //   user_id: userId,
+    //   message,
+    //   response,
+    //   category,
+    // });
+    // if (error) throw error;
   } catch (error) {
     console.error("Error saving chat", error);
     throw error;
@@ -109,16 +124,20 @@ export const saveChat = async (userId: string, message: string, response: string
 };
 
 export const getUserChats = async (userId: string) => {
-  const { data, error } = await supabase
-    .from('chats')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
-    
-  if (error) {
+  try {
+    // This is a placeholder - we need to create a 'chats' table in Supabase to use this
+    console.log("Would fetch chats for user:", userId);
+    // Once we have a chats table, we would use:
+    // const { data, error } = await supabase
+    //   .from('chats')
+    //   .select('*')
+    //   .eq('user_id', userId)
+    //   .order('created_at', { ascending: false });
+    // if (error) throw error;
+    // return data;
+    return [];
+  } catch (error) {
     console.error("Error fetching user chats:", error);
     return [];
   }
-  
-  return data;
 };

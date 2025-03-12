@@ -2,6 +2,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const AuthCallback = () => {
   const navigate = useNavigate();
@@ -9,13 +10,20 @@ const AuthCallback = () => {
   useEffect(() => {
     const handleAuthCallback = async () => {
       // Get the session from URL query parameters
-      const { error } = await supabase.auth.getSession();
+      const { data, error } = await supabase.auth.getSession();
       
       if (error) {
         console.error('Error during auth callback:', error);
+        toast.error('Authentication failed. Please try again.');
+        navigate('/');
+        return;
       }
       
-      // Redirect to the home page after successful authentication
+      if (data.session) {
+        toast.success('Successfully signed in!');
+      }
+      
+      // Redirect to the home page after authentication
       navigate('/');
     };
 
@@ -24,7 +32,11 @@ const AuthCallback = () => {
 
   return (
     <div className="h-screen flex items-center justify-center">
-      <p>Authenticating...</p>
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-rafiki-600 mx-auto mb-4"></div>
+        <p className="text-lg">Authenticating...</p>
+        <p className="text-sm text-gray-500 mt-2">You'll be redirected shortly</p>
+      </div>
     </div>
   );
 };

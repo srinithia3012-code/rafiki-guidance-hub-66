@@ -7,6 +7,7 @@ import { LucideLoader2 } from "lucide-react";
 import { signUpWithEmail } from "@/services/supabase";
 import { toast } from "sonner";
 import GoogleSignInButton from "./GoogleSignInButton";
+import LinkedInSignInButton from "./LinkedInSignInButton";
 
 interface SignUpFormProps {
   onSuccess: () => void;
@@ -103,11 +104,19 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onSuccess }) => {
         </div>
       </div>
       
-      <GoogleSignInButton 
-        isLoading={isLoading} 
-        setIsLoading={setIsLoading} 
-        onSuccess={onSuccess} 
-      />
+      <div className="space-y-3">
+        <GoogleSignInButton 
+          isLoading={isLoading} 
+          setIsLoading={setIsLoading} 
+          onSuccess={onSuccess} 
+        />
+        
+        <LinkedInSignInButton 
+          isLoading={isLoading} 
+          setIsLoading={setIsLoading} 
+          onSuccess={onSuccess} 
+        />
+      </div>
     </>
   );
 };

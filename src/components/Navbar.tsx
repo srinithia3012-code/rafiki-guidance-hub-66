@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X, User } from "lucide-react";
@@ -30,11 +31,15 @@ const Navbar: React.FC = () => {
   }, [scrolled]);
 
   useEffect(() => {
-    const unsubscribe = onAuthChange((user) => {
-      setCurrentUser(user);
+    const subscription = onAuthChange((session) => {
+      setCurrentUser(session?.user || null);
     });
 
-    return () => unsubscribe();
+    return () => {
+      if (subscription) {
+        subscription.unsubscribe();
+      }
+    };
   }, []);
 
   const handleSignOut = async () => {
