@@ -1,29 +1,13 @@
 
 import React, { useState, useRef, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { CircleHelp, SendHorizontal, Sparkles, User, Check, Clock, Trash, Bot } from "lucide-react";
 import { GuidanceCategory, sendMessageToAI, analyzeSentiment } from "@/services/ai";
-import { saveChat, getCurrentUser } from "@/services/firebase";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
-interface Message {
-  id: string;
-  content: string;
-  sender: "user" | "ai";
-  timestamp: Date;
-  category?: GuidanceCategory;
-  sentiment?: "positive" | "negative" | "neutral";
-}
+import { Message } from "@/types/chat";
+import { getCategoryWelcomeMessage } from "@/utils/chatUtils";
+import ChatHeader from "./chat/ChatHeader";
+import MessagesList from "./chat/MessagesList";
+import MessageInput from "./chat/MessageInput";
 
 interface ChatInterfaceProps {
   initialCategory?: GuidanceCategory;
@@ -34,8 +18,41 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialCategory = "genera
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [category, setCategory] = useState<GuidanceCategory>(initialCategory);
+  const [user, setUser] = useState<any>(null);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Check authentication state
+  useEffect(() => {
+    const checkUser = async () => {
+      setIsCheckingAuth(true);
+      try {
+        const { data } = await supabase.auth.getSession();
+        console.log("Auth session:", data.session);
+        setUser(data.session?.user || null);
+        
+        // Subscribe to auth changes
+        const { data: authListener } = supabase.auth.onAuthStateChange(
+          (_event, session) => {
+            console.log("Auth state changed:", session?.user?.email);
+            setUser(session?.user || null);
+          }
+        );
+        
+        return () => {
+          authListener.subscription.unsubscribe();
+        };
+      } catch (error) {
+        console.error("Error checking auth:", error);
+        toast.error("Error checking authentication status");
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    };
+    
+    checkUser();
+  }, []);
 
   // Welcome message
   useEffect(() => {
@@ -58,22 +75,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialCategory = "genera
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const getCategoryWelcomeMessage = (cat: GuidanceCategory): string => {
-    const welcomeMessages: Record<GuidanceCategory, string> = {
-      career: "Hi there! I'm Rafiki, your AI career advisor. I can help with career planning, job searches, resume building, and interview preparation. What career-related questions do you have today?",
-      academic: "Hello! I'm Rafiki, your AI academic advisor. I can help with study strategies, course selections, research skills, and academic planning. How can I assist with your academic journey today?",
-      mental_health: "Hi, I'm Rafiki, your AI wellbeing assistant. I'm here to provide support for emotional challenges, stress, and mental wellness. Remember, while I can offer guidance, I'm not a replacement for professional mental health services. How are you feeling today?",
-      stress_management: "Hello! I'm Rafiki, your AI stress management coach. I can suggest techniques for managing academic pressure, anxiety, and building resilience. What's causing you stress right now?",
-      general: "Hello! I'm Rafiki, your AI guidance counselor. I'm here to help with academics, career planning, and personal wellbeing. What would you like guidance on today?",
-    };
-    return welcomeMessages[cat];
-  };
-
   const handleSend = async () => {
     if (!inputValue.trim()) return;
     
     // Check if user is authenticated
-    const user = getCurrentUser();
     if (!user) {
       toast.error("Please sign in to use the chat feature");
       return;
@@ -92,6 +97,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialCategory = "genera
     setIsLoading(true);
 
     try {
+      console.log("Sending message with user:", user.email);
+      
       // Convert messages to format expected by AI service
       const chatHistory = messages
         .filter(msg => msg.id !== "welcome") // Remove welcome message
@@ -116,9 +123,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialCategory = "genera
       };
 
       setMessages((prev) => [...prev, aiMessage]);
-
-      // Save chat to Firebase
-      await saveChat(user.uid, userMessage.content, aiMessage.content, category);
 
       // If message shows signs of distress, show additional resources
       if (sentimentResult.sentiment === "negative" && sentimentResult.score < -0.2) {
@@ -177,159 +181,72 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialCategory = "genera
     ]);
   };
 
+  // If checking auth, show loading
+  if (isCheckingAuth) {
+    return (
+      <div className="flex flex-col h-[80vh] md:h-[70vh] rounded-lg overflow-hidden glass-card">
+        <ChatHeader 
+          category={category} 
+          onCategoryChange={handleCategoryChange} 
+          onClearChat={clearChat} 
+        />
+        <div className="flex-1 flex items-center justify-center bg-white/80">
+          <div className="text-center p-6">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rafiki-600 mx-auto mb-4"></div>
+            <h3 className="text-lg font-medium mb-2">Checking authentication status...</h3>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // If not authenticated, show a sign-in prompt
+  if (!user) {
+    return (
+      <div className="flex flex-col h-[80vh] md:h-[70vh] rounded-lg overflow-hidden glass-card">
+        <ChatHeader 
+          category={category} 
+          onCategoryChange={handleCategoryChange} 
+          onClearChat={clearChat} 
+        />
+        <div className="flex-1 flex items-center justify-center bg-white/80">
+          <div className="text-center p-6">
+            <div className="bg-rafiki-100 p-4 rounded-full mx-auto mb-4 w-16 h-16 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-rafiki-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium mb-2">Please sign in to use the chat feature</h3>
+            <p className="text-gray-500 mb-4">Sign in to get personalized guidance from Rafiki AI</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col h-full rounded-lg overflow-hidden glass-card">
-      {/* Chat header */}
-      <div className="bg-rafiki-600 text-white p-4 flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <Avatar className="h-10 w-10 border-2 border-white/20">
-            <AvatarImage src="/placeholder.svg" alt="Rafiki AI" />
-            <AvatarFallback className="bg-rafiki-700 text-white">
-              <Bot className="h-5 w-5" />
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <h3 className="font-semibold">Rafiki AI Assistant</h3>
-            <div className="flex items-center text-xs text-white/80">
-              <span className="flex h-2 w-2 rounded-full bg-green-400 mr-1.5"></span>
-              Online
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <Select value={category} onValueChange={handleCategoryChange}>
-            <SelectTrigger className="bg-white/10 border-none text-white w-40 h-8 text-xs">
-              <SelectValue placeholder="Select category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="general">General Guidance</SelectItem>
-              <SelectItem value="academic">Academic</SelectItem>
-              <SelectItem value="career">Career</SelectItem>
-              <SelectItem value="mental_health">Mental Health</SelectItem>
-              <SelectItem value="stress_management">Stress Management</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="text-white hover:bg-white/20 h-8 w-8"
-            onClick={clearChat}
-          >
-            <Trash className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Chat messages */}
-      <ScrollArea className="flex-1 p-4 bg-white/80">
-        <div className="space-y-4">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
-            >
-              <div className="flex max-w-[85%] md:max-w-[70%]">
-                {message.sender === "ai" && (
-                  <Avatar className="h-9 w-9 mr-2 mt-1 flex-shrink-0">
-                    <AvatarFallback className="bg-rafiki-100 text-rafiki-700">
-                      <Bot className="h-4 w-4" />
-                    </AvatarFallback>
-                  </Avatar>
-                )}
-                
-                <div
-                  className={`rounded-2xl p-4 ${
-                    message.sender === "user"
-                      ? "bg-rafiki-600 text-white rounded-tr-none"
-                      : "bg-gray-100 text-gray-800 rounded-tl-none"
-                  }`}
-                >
-                  <div className="text-sm whitespace-pre-wrap">{message.content}</div>
-                  <div className="mt-1 flex justify-end items-center">
-                    <span className="text-xs opacity-60">
-                      {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                    </span>
-                    {message.sender === "user" && message.sentiment && (
-                      <div className="ml-1.5">
-                        {message.sentiment === "positive" && (
-                          <div className="bg-green-100 text-green-800 text-xs rounded-full px-1.5 py-0.5">
-                            <Check className="h-3 w-3 inline-block" />
-                          </div>
-                        )}
-                        {message.sentiment === "negative" && (
-                          <div className="bg-red-100 text-red-800 text-xs rounded-full px-1.5 py-0.5">
-                            <CircleHelp className="h-3 w-3 inline-block" />
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                {message.sender === "user" && (
-                  <Avatar className="h-9 w-9 ml-2 mt-1 flex-shrink-0">
-                    <AvatarFallback className="bg-gray-200">
-                      <User className="h-4 w-4" />
-                    </AvatarFallback>
-                  </Avatar>
-                )}
-              </div>
-            </div>
-          ))}
-          
-          {isLoading && (
-            <div className="flex justify-start">
-              <div className="flex max-w-[85%] md:max-w-[70%]">
-                <Avatar className="h-9 w-9 mr-2 mt-1 flex-shrink-0">
-                  <AvatarFallback className="bg-rafiki-100 text-rafiki-700">
-                    <Bot className="h-4 w-4" />
-                  </AvatarFallback>
-                </Avatar>
-                <div className="rounded-2xl p-4 bg-gray-100 text-gray-800 rounded-tl-none">
-                  <div className="flex items-center space-x-2">
-                    <Clock className="h-4 w-4 text-rafiki-600 animate-pulse" />
-                    <span className="text-sm loading-dots">Typing</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          <div ref={messagesEndRef} />
-        </div>
-      </ScrollArea>
-
-      {/* Input area */}
-      <div className="p-4 bg-white border-t border-gray-200">
-        <div className="flex items-center space-x-2">
-          <div className="relative flex-1">
-            <Input
-              ref={inputRef}
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Type your message here..."
-              className="pr-10 py-6 focus-visible:ring-rafiki-500"
-              disabled={isLoading}
-            />
-            <div className="absolute right-3 top-1/2 -translate-y-1/2">
-              <Sparkles className="h-4 w-4 text-rafiki-400" />
-            </div>
-          </div>
-          <Button
-            onClick={handleSend}
-            disabled={!inputValue.trim() || isLoading}
-            className="bg-rafiki-600 hover:bg-rafiki-700 text-white"
-          >
-            <SendHorizontal className="h-5 w-5" />
-          </Button>
-        </div>
-        <div className="mt-2 text-xs text-gray-500 text-center">
-          Rafiki provides general guidance. For serious concerns, please contact professional services.
-        </div>
-      </div>
+    <div className="flex flex-col h-[80vh] md:h-[70vh] rounded-lg overflow-hidden glass-card">
+      <ChatHeader 
+        category={category} 
+        onCategoryChange={handleCategoryChange} 
+        onClearChat={clearChat} 
+      />
+      
+      <MessagesList 
+        messages={messages} 
+        isLoading={isLoading} 
+        messagesEndRef={messagesEndRef} 
+      />
+      
+      <MessageInput 
+        inputValue={inputValue}
+        setInputValue={setInputValue}
+        handleSend={handleSend}
+        handleKeyDown={handleKeyDown}
+        isLoading={isLoading}
+        inputRef={inputRef}
+      />
     </div>
   );
 };
