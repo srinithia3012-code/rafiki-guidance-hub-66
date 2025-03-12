@@ -1,6 +1,6 @@
 
-// This is a placeholder for the Google AI API integration
-// You'll need to replace this with the actual Google Gemini API when available
+// Google AI API integration for Rafiki AI
+// Using Google Gemini API for generating responses
 
 const GEMINI_API_KEY = "AIzaSyA70s3cQXLM73NY1sQaMxdxdQDKNtkEgjs";
 const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
@@ -95,12 +95,7 @@ export const sendMessageToAI = async (
       ]
     };
     
-    // For development/MVP, we'll use a sample response if the API key isn't available
-    // In a production environment, you would always call the API
-    if (!GEMINI_API_KEY) {
-      console.warn("No API key provided - using mock response");
-      return getMockResponse(message, category);
-    }
+    console.log("Sending request to Gemini API:", message);
     
     const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
       method: "POST",
@@ -112,7 +107,7 @@ export const sendMessageToAI = async (
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.error("AI API error:", errorData);
+      console.error("Gemini API error:", errorData);
       throw new Error(`API error: ${response.status}`);
     }
 
@@ -122,53 +117,18 @@ export const sendMessageToAI = async (
     const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || 
                         "I'm sorry, I couldn't generate a response at this time.";
     
+    console.log("Received response from Gemini API");
+    
     return {
       text: responseText
     };
   } catch (error) {
-    console.error("Error calling AI API:", error);
-    return getMockResponse(message, category);
+    console.error("Error calling Gemini API:", error);
+    return {
+      text: "I apologize, but I'm having trouble connecting to my knowledge base right now. Please try again in a moment."
+    };
   }
 };
-
-// Function to get mock responses for development/fallback
-function getMockResponse(message: string, category: GuidanceCategory): AIResponse {
-  const responses: Record<GuidanceCategory, string[]> = {
-    career: [
-      "Based on what you've shared about your interests in technology and design, you might consider exploring UX/UI design as a career path. This field combines creativity with technical skills and has strong demand in the job market. I recommend taking an introductory course on platforms like Coursera or Udemy to get a better feel for it.",
-      "When building your resume for tech positions, focus on showcasing projects rather than just listing skills. Employers value seeing how you've applied your knowledge. Consider creating a portfolio website that highlights 3-4 of your best projects with explanations of your process and contribution."
-    ],
-    academic: [
-      "For managing a heavy course load, the evidence-based Pomodoro Technique might work well for you. Study in focused 25-minute sessions with 5-minute breaks. This helps maintain concentration while preventing burnout. Try using this for your most challenging subjects first when your energy is highest.",
-      "When preparing for exams, active recall is proven to be more effective than re-reading notes. Try explaining concepts aloud as if teaching someone else, or create practice questions for yourself. Research shows this significantly improves retention compared to passive review methods."
-    ],
-    mental_health: [
-      "What you're describing sounds like it might be anxiety related to academic performance. Many students experience this. Some evidence-based strategies include: 1) Scheduled worry time - allocate 15 minutes daily to write down concerns, 2) Deep breathing exercises when feeling overwhelmed, and 3) Challenging perfectionist thinking patterns. If these feelings persist, your university counseling center is a good resource.",
-      "Sleep quality significantly impacts mental health. Consider establishing a consistent sleep routine: going to bed and waking up at the same time, avoiding screens an hour before bed, and creating a restful environment. Even small improvements in sleep can have noticeable effects on mood and stress levels."
-    ],
-    stress_management: [
-      "For managing exam stress, try the 4-7-8 breathing technique: inhale for 4 counts, hold for 7, exhale for 8. Research shows this activates your parasympathetic nervous system, reducing the physical symptoms of stress. Practice this for 2 minutes before studying and again before your exam.",
-      "Time management is key for reducing academic stress. The Eisenhower Matrix can help: categorize tasks by urgency and importance, then prioritize accordingly. This helps prevent last-minute cramming, which is a major source of student stress. Start by mapping out your assignments for the next two weeks."
-    ],
-    general: [
-      "Finding balance between academics and social life is important for overall wellbeing. Research suggests that scheduling specific time for both studying and socializing tends to be more effective than a less structured approach. Perhaps try using a digital calendar to block time for your priorities each week, including study blocks, social activities, and personal time.",
-      "Many students find the transition to university challenging. It's completely normal to feel overwhelmed at times. Consider identifying one small action that might help your situation today - whether that's talking to a professor during office hours, connecting with a classmate, or taking a short break for self-care. Small steps often lead to meaningful progress."
-    ]
-  };
-  
-  // Simple logic to choose a relevant response
-  const categoryResponses = responses[category];
-  let responseIndex = 0;
-  
-  // Very simple keyword matching to pick more relevant responses
-  if (message.toLowerCase().includes("stress") || message.toLowerCase().includes("anxiety")) {
-    responseIndex = 1;  
-  }
-  
-  return {
-    text: categoryResponses[responseIndex % categoryResponses.length]
-  };
-}
 
 // Function for sentiment analysis (simplified implementation)
 export const analyzeSentiment = async (text: string): Promise<{
