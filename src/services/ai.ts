@@ -1,78 +1,77 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 
-export type GuidanceCategory = "general" | "academic" | "career" | "mental_health" | "stress_management";
+// Define the guidance categories
+export type GuidanceCategory = "general" | "career" | "academic" | "mental_health" | "stress_management";
 
-interface Message {
-  role: "user" | "model";
-  content: string;
-}
-
-export const sendMessageToAI = async (message: string, category: GuidanceCategory, chatHistory: Message[] = []) => {
-  console.log("Sending message to AI:", { message, category, chatHistoryLength: chatHistory.length });
+// Mock function for sending message to AI
+export const sendMessageToAI = async (
+  message: string,
+  category: GuidanceCategory = "general",
+  history: { role: "user" | "model"; content: string }[] = []
+) => {
+  // This would normally be a call to an AI API like OpenAI
+  console.log("Sending to AI:", { message, category, history });
   
-  // Get the current session
-  const { data: { session } } = await supabase.auth.getSession();
+  // Simulate network request
+  await new Promise(resolve => setTimeout(resolve, 1000));
   
-  if (!session) {
-    console.error("No session found");
-    toast.error("You must be logged in to use this feature");
-    throw new Error("You must be logged in to use this feature");
+  // Return mock response based on category
+  let response = "";
+  
+  switch (category) {
+    case "career":
+      response = "Based on your career interests, I'd suggest exploring internship opportunities that align with your studies. Would you like me to help you prepare a resume or cover letter?";
+      break;
+    case "academic":
+      response = "For academic improvement, consider forming a study group with classmates. Research shows collaborative learning can improve retention. What subject are you finding most challenging?";
+      break;
+    case "mental_health":
+      response = "It sounds like you're going through a challenging time. Remember that self-care is important - even small acts like taking a walk or talking to a friend can help. Have you considered speaking with a counselor at your university?";
+      break;
+    case "stress_management":
+      response = "When feeling overwhelmed, try the 5-5-5 technique: name 5 things you can see, 5 things you can hear, and 5 things you can feel. This can help ground you in the present moment. What specific stressors are you facing?";
+      break;
+    default:
+      response = "I'm here to help with any questions you have about your academic journey, career planning, or personal wellbeing. What specific area would you like guidance on today?";
   }
-
-  try {
-    console.log("Calling Supabase function with session:", session.user.email);
-    
-    const response = await supabase.functions.invoke("gemini-chat", {
-      body: {
-        message,
-        category,
-        chatHistory,
-      },
-    });
-
-    if (response.error) {
-      console.error("Error from Supabase function:", response.error);
-      throw new Error(response.error.message || "Failed to get a response");
-    }
-
-    console.log("Received response from AI:", response.data);
-    return { text: response.data.text };
-  } catch (error) {
-    console.error("Error sending message to AI:", error);
-    toast.error("Failed to get a response. Please try again.");
-    throw error;
-  }
+  
+  return { text: response };
 };
 
-// Simple sentiment analysis function (to keep this functionality)
+// Mock function for sentiment analysis
 export const analyzeSentiment = async (text: string) => {
-  // Simple keywords-based sentiment analysis
-  const positiveWords = ["happy", "great", "excellent", "good", "wonderful", "fantastic", "excited"];
-  const negativeWords = ["sad", "bad", "terrible", "anxious", "worried", "stressed", "depressed", "overwhelmed"];
+  // This would normally call a sentiment analysis API
+  console.log("Analyzing sentiment:", text);
   
+  // Simple mock implementation based on keywords
   const lowerText = text.toLowerCase();
-  let positiveCount = 0;
-  let negativeCount = 0;
+  const positiveWords = ["happy", "excited", "grateful", "good", "great", "excellent", "fantastic"];
+  const negativeWords = ["anxious", "worried", "stressed", "depressed", "sad", "unhappy", "hate", "angry", "overwhelmed"];
   
-  positiveWords.forEach(word => {
-    if (lowerText.includes(word)) positiveCount++;
-  });
-  
-  negativeWords.forEach(word => {
-    if (lowerText.includes(word)) negativeCount++;
-  });
-  
-  let sentiment: "positive" | "negative" | "neutral" = "neutral";
   let score = 0;
   
-  if (positiveCount > negativeCount) {
+  // Check for positive words
+  for (const word of positiveWords) {
+    if (lowerText.includes(word)) score += 0.2;
+  }
+  
+  // Check for negative words
+  for (const word of negativeWords) {
+    if (lowerText.includes(word)) score -= 0.2;
+  }
+  
+  // Clamp score between -1 and 1
+  score = Math.max(-1, Math.min(1, score));
+  
+  let sentiment: "positive" | "negative" | "neutral";
+  
+  if (score > 0.1) {
     sentiment = "positive";
-    score = positiveCount / (positiveCount + negativeCount);
-  } else if (negativeCount > positiveCount) {
+  } else if (score < -0.1) {
     sentiment = "negative";
-    score = -negativeCount / (positiveCount + negativeCount);
+  } else {
+    sentiment = "neutral";
   }
   
   return { sentiment, score };

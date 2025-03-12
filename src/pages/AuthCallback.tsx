@@ -1,10 +1,10 @@
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-const AuthCallback = () => {
+const AuthCallback: React.FC = () => {
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +22,7 @@ const AuthCallback = () => {
           setTimeout(() => navigate('/'), 3000);
           return;
         }
-        
+
         if (data.session) {
           console.log('Authentication successful:', data.session);
           toast.success('Successfully signed in!');

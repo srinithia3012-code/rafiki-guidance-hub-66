@@ -6,15 +6,11 @@ import type { Database } from './types';
 const SUPABASE_URL = "https://mhbhyimkykyvuphbefwg.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1oYmh5aW1reWt5dnVwaGJlZndnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3NjE3MjEsImV4cCI6MjA1NzMzNzcyMX0.q42WQ2LzGfzxch1ghkMOoArCGNo0jxfiqOwY9SQsXnQ";
 
-// Import the supabase client like this:
-// import { supabase } from "@/integrations/supabase/client";
-
 export const supabase = createClient<Database>(
   SUPABASE_URL, 
   SUPABASE_PUBLISHABLE_KEY,
   {
     auth: {
-      // This ensures the callback URL is properly formed
       flowType: 'pkce',
       autoRefreshToken: true,
       persistSession: true,
