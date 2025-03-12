@@ -1,4 +1,3 @@
-
 import { initializeApp } from "firebase/app";
 import { 
   getAuth, 
@@ -22,6 +21,7 @@ import {
   serverTimestamp,
   getDoc
 } from "firebase/firestore";
+import { getAnalytics } from "firebase/analytics";
 
 // Firebase configuration
 const firebaseConfig = {
@@ -30,14 +30,15 @@ const firebaseConfig = {
   projectId: "rafiki-ai-50319",
   storageBucket: "rafiki-ai-50319.firebasestorage.app",
   messagingSenderId: "442431934427",
-  appId: "1:442431934427:web:84d0840a9c1c620ca361fe",
-  measurementId: "G-XS2FNML6X1"
+  appId: "1:442431934427:web:b7eb388f853a2fdaa361fe",
+  measurementId: "G-278TNN3YEG"
 };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const analytics = getAnalytics(app);
 const googleProvider = new GoogleAuthProvider();
 
 // Authentication functions
@@ -126,4 +127,4 @@ export const getUserChats = async (userId: string) => {
   return chats;
 };
 
-export { db, auth };
+export { db, auth, analytics };

@@ -1,4 +1,3 @@
-
 // Google AI API integration for Rafiki AI
 // Using Google Gemini API for generating responses
 
