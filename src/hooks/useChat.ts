@@ -121,10 +121,7 @@ export function useChat(initialCategory: GuidanceCategory = "general") {
       // If message shows signs of distress, show additional resources
       if (sentimentResult.sentiment === "negative" && sentimentResult.score < -0.2) {
         toast.info(
-          <div className="flex flex-col space-y-1">
-            <span className="font-medium">Need additional support?</span>
-            <span className="text-sm">Remember that professional help is available. Consider reaching out to your university's counseling services.</span>
-          </div>,
+          "Need additional support? Remember that professional help is available. Consider reaching out to your university's counseling services.",
           {
             duration: 8000,
           }
