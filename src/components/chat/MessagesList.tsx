@@ -17,8 +17,8 @@ const MessagesList: React.FC<MessagesListProps> = ({
   messagesEndRef 
 }) => {
   return (
-    <ScrollArea className="flex-1 p-3 md:p-4 bg-white/80">
-      <div className="space-y-4">
+    <ScrollArea className="flex-1 p-2 sm:p-3 md:p-4 bg-white/80 w-full">
+      <div className="space-y-4 max-w-3xl mx-auto">
         {messages.map((message) => (
           <MessageItem key={message.id} message={message} />
         ))}
