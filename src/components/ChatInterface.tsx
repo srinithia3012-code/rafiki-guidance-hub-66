@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { GuidanceCategory, sendMessageToAI, analyzeSentiment } from "@/services/ai";
-import { saveChat, getCurrentUser } from "@/services/firebase";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Message } from "@/types/chat";
 import { getCategoryWelcomeMessage } from "@/utils/chatUtils";
@@ -18,8 +18,30 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialCategory = "genera
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [category, setCategory] = useState<GuidanceCategory>(initialCategory);
+  const [user, setUser] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Check authentication state
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data } = await supabase.auth.getSession();
+      setUser(data.session?.user || null);
+      
+      // Subscribe to auth changes
+      const { data: authListener } = supabase.auth.onAuthStateChange(
+        (_event, session) => {
+          setUser(session?.user || null);
+        }
+      );
+      
+      return () => {
+        authListener.subscription.unsubscribe();
+      };
+    };
+    
+    checkUser();
+  }, []);
 
   // Welcome message
   useEffect(() => {
@@ -46,7 +68,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialCategory = "genera
     if (!inputValue.trim()) return;
     
     // Check if user is authenticated
-    const user = getCurrentUser();
     if (!user) {
       toast.error("Please sign in to use the chat feature");
       return;
@@ -89,9 +110,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialCategory = "genera
       };
 
       setMessages((prev) => [...prev, aiMessage]);
-
-      // Save chat to Firebase
-      await saveChat(user.uid, userMessage.content, aiMessage.content, category);
 
       // If message shows signs of distress, show additional resources
       if (sentimentResult.sentiment === "negative" && sentimentResult.score < -0.2) {
@@ -149,6 +167,31 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialCategory = "genera
       },
     ]);
   };
+
+  // If not authenticated, show a sign-in prompt
+  if (!user) {
+    return (
+      <div className="flex flex-col h-[80vh] md:h-[70vh] rounded-lg overflow-hidden glass-card">
+        <ChatHeader 
+          category={category} 
+          onCategoryChange={handleCategoryChange} 
+          onClearChat={clearChat} 
+        />
+        <div className="flex-1 flex items-center justify-center bg-white/80">
+          <div className="text-center p-6">
+            <div className="bg-rafiki-100 p-4 rounded-full mx-auto mb-4 w-16 h-16 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-rafiki-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium mb-2">Please sign in to use the chat feature</h3>
+            <p className="text-gray-500 mb-4">Sign in to get personalized guidance from Rafiki AI</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-[80vh] md:h-[70vh] rounded-lg overflow-hidden glass-card">
