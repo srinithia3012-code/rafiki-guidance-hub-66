@@ -46,7 +46,7 @@ export const sendMessageToAI = async (message: string, category: GuidanceCategor
   }
 };
 
-// Simple sentiment analysis function
+// Simple sentiment analysis function (to keep this functionality)
 export const analyzeSentiment = async (text: string) => {
   // Simple keywords-based sentiment analysis
   const positiveWords = ["happy", "great", "excellent", "good", "wonderful", "fantastic", "excited"];
