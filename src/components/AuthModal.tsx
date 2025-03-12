@@ -19,9 +19,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[425px] w-[95%] max-w-[95%] sm:w-full mx-auto glass-card p-4 sm:p-6">
+      <DialogContent className="sm:max-w-[425px] glass-card">
         <DialogHeader>
-          <DialogTitle className="text-xl sm:text-2xl font-semibold">Welcome to Rafiki AI</DialogTitle>
+          <DialogTitle className="text-2xl font-semibold">Welcome to Rafiki AI</DialogTitle>
           <DialogDescription>
             Your personal AI guidance counselor for university success
           </DialogDescription>

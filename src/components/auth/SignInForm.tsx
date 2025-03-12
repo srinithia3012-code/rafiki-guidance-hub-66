@@ -4,10 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LucideLoader2 } from "lucide-react";
-import { signInWithEmail } from "@/services/supabase";
+import { signInWithEmail } from "@/services/firebase";
 import { toast } from "sonner";
 import GoogleSignInButton from "./GoogleSignInButton";
-import LinkedInSignInButton from "./LinkedInSignInButton";
 
 interface SignInFormProps {
   onSuccess: () => void;
@@ -81,19 +80,11 @@ const SignInForm: React.FC<SignInFormProps> = ({ onSuccess }) => {
         </div>
       </div>
       
-      <div className="space-y-3">
-        <GoogleSignInButton 
-          isLoading={isLoading} 
-          setIsLoading={setIsLoading} 
-          onSuccess={onSuccess} 
-        />
-        
-        <LinkedInSignInButton 
-          isLoading={isLoading} 
-          setIsLoading={setIsLoading} 
-          onSuccess={onSuccess} 
-        />
-      </div>
+      <GoogleSignInButton 
+        isLoading={isLoading} 
+        setIsLoading={setIsLoading} 
+        onSuccess={onSuccess} 
+      />
     </>
   );
 };

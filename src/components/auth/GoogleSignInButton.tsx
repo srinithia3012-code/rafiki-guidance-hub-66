@@ -2,7 +2,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { LucideLoader2 } from "lucide-react";
-import { signInWithGoogle } from "@/services/supabase";
+import { signInWithGoogle, createUserProfile } from "@/services/firebase";
 import { toast } from "sonner";
 
 interface GoogleSignInButtonProps {
@@ -20,17 +20,14 @@ const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
     setIsLoading(true);
     
     try {
-      await signInWithGoogle();
-      // Note: onSuccess will be called via auth state change in the parent component
-      // since OAuth redirects to a different URL
+      const { user } = await signInWithGoogle();
+      await createUserProfile(user);
+      toast.success("Signed in with Google successfully!");
+      onSuccess();
     } catch (error: any) {
-      console.error("Sign in error:", error);
-      // Display a more user-friendly error message
-      const errorMessage = 
-        error.message === 'User rejected the login request' 
-          ? 'Sign-in canceled. Please try again.' 
-          : error.message || "Failed to sign in. Please try again.";
-      toast.error(errorMessage);
+      console.error("Google sign in error:", error);
+      toast.error(error.message || "Failed to sign in with Google. Please try again.");
+    } finally {
       setIsLoading(false);
     }
   };
@@ -39,7 +36,7 @@ const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
     <Button 
       type="button" 
       variant="outline" 
-      className="w-full flex items-center justify-center" 
+      className="w-full" 
       onClick={handleGoogleSignIn}
       disabled={isLoading}
     >
@@ -65,7 +62,7 @@ const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
           />
         </svg>
       )}
-      <span className="ml-1">Google</span>
+      Google
     </Button>
   );
 };

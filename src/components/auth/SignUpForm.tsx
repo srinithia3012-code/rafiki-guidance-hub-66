@@ -4,10 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LucideLoader2 } from "lucide-react";
-import { signUpWithEmail } from "@/services/supabase";
+import { signUpWithEmail, createUserProfile } from "@/services/firebase";
 import { toast } from "sonner";
 import GoogleSignInButton from "./GoogleSignInButton";
-import LinkedInSignInButton from "./LinkedInSignInButton";
 
 interface SignUpFormProps {
   onSuccess: () => void;
@@ -31,8 +30,9 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onSuccess }) => {
     setIsLoading(true);
 
     try {
-      await signUpWithEmail(email, password, { displayName: name });
-      toast.success("Account created successfully! Please check your email to confirm your account.");
+      const { user } = await signUpWithEmail(email, password);
+      await createUserProfile(user, { displayName: name });
+      toast.success("Account created successfully!");
       onSuccess();
     } catch (error: any) {
       console.error("Sign up error:", error);
@@ -104,19 +104,11 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onSuccess }) => {
         </div>
       </div>
       
-      <div className="space-y-3">
-        <GoogleSignInButton 
-          isLoading={isLoading} 
-          setIsLoading={setIsLoading} 
-          onSuccess={onSuccess} 
-        />
-        
-        <LinkedInSignInButton 
-          isLoading={isLoading} 
-          setIsLoading={setIsLoading} 
-          onSuccess={onSuccess} 
-        />
-      </div>
+      <GoogleSignInButton 
+        isLoading={isLoading} 
+        setIsLoading={setIsLoading} 
+        onSuccess={onSuccess} 
+      />
     </>
   );
 };

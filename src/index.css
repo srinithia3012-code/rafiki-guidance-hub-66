@@ -95,7 +95,6 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-    overflow-x: hidden;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -103,15 +102,15 @@
   }
   
   h1 {
-    @apply text-3xl sm:text-4xl md:text-5xl lg:text-6xl;
+    @apply text-4xl md:text-5xl lg:text-6xl;
   }
   
   h2 {
-    @apply text-2xl sm:text-3xl md:text-4xl;
+    @apply text-3xl md:text-4xl;
   }
   
   h3 {
-    @apply text-xl sm:text-2xl md:text-3xl;
+    @apply text-2xl md:text-3xl;
   }
 
   .glass-card {
@@ -124,17 +123,6 @@
 
   .text-balance {
     text-wrap: balance;
-  }
-  
-  /* Responsive container for smaller screens */
-  .container {
-    @apply px-4 mx-auto;
-    width: 100%;
-  }
-  
-  /* Add padding to main content area to account for fixed navbar */
-  main {
-    @apply pt-16 sm:pt-20;
   }
 }
 
