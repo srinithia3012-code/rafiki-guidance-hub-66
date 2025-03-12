@@ -20,10 +20,14 @@ const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
     setIsLoading(true);
     
     try {
-      const { user } = await signInWithGoogle();
-      await createUserProfile(user);
-      toast.success("Signed in with Google successfully!");
-      onSuccess();
+      const result = await signInWithGoogle();
+      if (result && result.user) {
+        await createUserProfile(result.user);
+        toast.success("Signed in with Google successfully!");
+        onSuccess();
+      } else {
+        throw new Error("Failed to sign in with Google");
+      }
     } catch (error: any) {
       console.error("Google sign in error:", error);
       toast.error(error.message || "Failed to sign in with Google. Please try again.");
@@ -36,7 +40,7 @@ const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
     <Button 
       type="button" 
       variant="outline" 
-      className="w-full" 
+      className="w-full flex items-center justify-center" 
       onClick={handleGoogleSignIn}
       disabled={isLoading}
     >
@@ -62,7 +66,7 @@ const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
           />
         </svg>
       )}
-      Google
+      <span className="ml-1">Google</span>
     </Button>
   );
 };
