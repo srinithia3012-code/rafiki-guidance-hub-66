@@ -19,25 +19,36 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialCategory = "genera
   const [isLoading, setIsLoading] = useState(false);
   const [category, setCategory] = useState<GuidanceCategory>(initialCategory);
   const [user, setUser] = useState<any>(null);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Check authentication state
   useEffect(() => {
     const checkUser = async () => {
-      const { data } = await supabase.auth.getSession();
-      setUser(data.session?.user || null);
-      
-      // Subscribe to auth changes
-      const { data: authListener } = supabase.auth.onAuthStateChange(
-        (_event, session) => {
-          setUser(session?.user || null);
-        }
-      );
-      
-      return () => {
-        authListener.subscription.unsubscribe();
-      };
+      setIsCheckingAuth(true);
+      try {
+        const { data } = await supabase.auth.getSession();
+        console.log("Auth session:", data.session);
+        setUser(data.session?.user || null);
+        
+        // Subscribe to auth changes
+        const { data: authListener } = supabase.auth.onAuthStateChange(
+          (_event, session) => {
+            console.log("Auth state changed:", session?.user?.email);
+            setUser(session?.user || null);
+          }
+        );
+        
+        return () => {
+          authListener.subscription.unsubscribe();
+        };
+      } catch (error) {
+        console.error("Error checking auth:", error);
+        toast.error("Error checking authentication status");
+      } finally {
+        setIsCheckingAuth(false);
+      }
     };
     
     checkUser();
@@ -86,6 +97,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialCategory = "genera
     setIsLoading(true);
 
     try {
+      console.log("Sending message with user:", user.email);
+      
       // Convert messages to format expected by AI service
       const chatHistory = messages
         .filter(msg => msg.id !== "welcome") // Remove welcome message
@@ -167,6 +180,25 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialCategory = "genera
       },
     ]);
   };
+
+  // If checking auth, show loading
+  if (isCheckingAuth) {
+    return (
+      <div className="flex flex-col h-[80vh] md:h-[70vh] rounded-lg overflow-hidden glass-card">
+        <ChatHeader 
+          category={category} 
+          onCategoryChange={handleCategoryChange} 
+          onClearChat={clearChat} 
+        />
+        <div className="flex-1 flex items-center justify-center bg-white/80">
+          <div className="text-center p-6">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rafiki-600 mx-auto mb-4"></div>
+            <h3 className="text-lg font-medium mb-2">Checking authentication status...</h3>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // If not authenticated, show a sign-in prompt
   if (!user) {

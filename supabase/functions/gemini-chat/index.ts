@@ -2,10 +2,20 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") || "";
+const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") || "AIzaSyA70s3cQXLM73NY1sQaMxdxdQDKNtkEgjs";
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
 serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
   // Create a Supabase client with the Auth context of the logged in user
   const supabaseClient = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
@@ -28,7 +38,7 @@ serve(async (req) => {
       JSON.stringify({
         error: "Unauthorized",
       }),
-      { status: 401, headers: { "Content-Type": "application/json" } }
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
@@ -36,13 +46,19 @@ serve(async (req) => {
   if (req.method !== "POST") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
       status: 405,
-      headers: { "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 
   try {
+    console.log("Received request in Gemini Edge Function");
+    
     // Parse the request body
     const { message, category, chatHistory } = await req.json();
+    
+    console.log("Message:", message);
+    console.log("Category:", category);
+    console.log("Chat History Length:", chatHistory?.length || 0);
 
     // Build the prompt for Gemini based on the category
     let systemPrompt = "You are Rafiki, a helpful AI guidance counselor for university students. ";
@@ -65,10 +81,10 @@ serve(async (req) => {
     }
 
     // Format the chat history for Gemini
-    const formattedHistory = chatHistory.map((msg: any) => ({
+    const formattedHistory = chatHistory?.map((msg: any) => ({
       role: msg.role === "user" ? "user" : "model",
       parts: [{ text: msg.content }],
-    }));
+    })) || [];
 
     // Add the system prompt as the first message from the model
     const contents = [
@@ -83,6 +99,8 @@ serve(async (req) => {
       },
     ];
 
+    console.log("Calling Gemini API with API key:", GEMINI_API_KEY.substring(0, 5) + "...");
+    
     // Call the Gemini API
     const response = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
       method: "POST",
@@ -119,36 +137,30 @@ serve(async (req) => {
     });
 
     const data = await response.json();
-
+    console.log("Gemini API response status:", response.status);
+    
     // Check if there was an error with the Gemini API
     if (data.error) {
       console.error("Gemini API error:", data.error);
-      return new Response(JSON.stringify({ error: "Failed to get response from AI" }), {
+      return new Response(JSON.stringify({ error: "Failed to get response from AI", details: data.error }), {
         status: 500,
-        headers: { "Content-Type": "application/json" },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     // Extract the AI's response text
     const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "I'm sorry, I couldn't generate a response.";
-
-    // Save the chat to the database (optional, implement if needed)
-    // await supabaseClient.from('chats').insert({
-    //   user_id: session.user.id,
-    //   message,
-    //   response: aiResponse,
-    //   category,
-    // });
+    console.log("Successfully generated AI response");
 
     return new Response(JSON.stringify({ text: aiResponse }), {
       status: 200,
-      headers: { "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Error:", error);
-    return new Response(JSON.stringify({ error: "An unexpected error occurred" }), {
+    console.error("Error in gemini-chat function:", error);
+    return new Response(JSON.stringify({ error: "An unexpected error occurred", details: error.message }), {
       status: 500,
-      headers: { "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
