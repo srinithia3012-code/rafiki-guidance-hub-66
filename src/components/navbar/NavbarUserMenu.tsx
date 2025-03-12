@@ -10,12 +10,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogOut } from "lucide-react";
-import { User as FirebaseUser } from "firebase/auth";
-import { signOut } from "@/services/firebase";
+import { User } from "@supabase/supabase-js";
+import { signOut } from "@/services/supabase";
 import { toast } from "sonner";
 
 interface NavbarUserMenuProps {
-  currentUser: FirebaseUser;
+  currentUser: User;
 }
 
 const NavbarUserMenu: React.FC<NavbarUserMenuProps> = ({ currentUser }) => {
@@ -29,16 +29,17 @@ const NavbarUserMenu: React.FC<NavbarUserMenuProps> = ({ currentUser }) => {
     }
   };
 
+  const userName = currentUser.user_metadata?.name || 'User';
+  const userAvatar = currentUser.user_metadata?.avatar_url || '';
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="rounded-full h-9 w-9 p-0">
           <Avatar className="h-9 w-9">
-            <AvatarImage src={currentUser.photoURL || ""} alt={currentUser.displayName || "User"} />
+            <AvatarImage src={userAvatar} alt={userName} />
             <AvatarFallback className="bg-rafiki-100 text-rafiki-700">
-              {currentUser.displayName
-                ? currentUser.displayName.charAt(0).toUpperCase()
-                : currentUser.email?.charAt(0).toUpperCase() || "U"}
+              {userName.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
         </Button>
@@ -46,7 +47,7 @@ const NavbarUserMenu: React.FC<NavbarUserMenuProps> = ({ currentUser }) => {
       <DropdownMenuContent align="end" className="w-56">
         <div className="flex items-center justify-start gap-2 p-2">
           <div className="flex flex-col space-y-0.5 leading-none">
-            <p className="font-medium text-sm">{currentUser.displayName || "User"}</p>
+            <p className="font-medium text-sm">{userName}</p>
             <p className="text-xs text-muted-foreground">{currentUser.email}</p>
           </div>
         </div>

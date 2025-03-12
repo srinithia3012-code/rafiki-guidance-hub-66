@@ -1,21 +1,19 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X, User } from "lucide-react";
-import { auth } from "@/services/firebase";
-import { User as FirebaseUser } from "firebase/auth";
 import { toast } from "sonner";
 import AuthModal from "./AuthModal";
 import Logo from "./navbar/Logo";
 import NavLinks from "./navbar/NavLinks";
 import NavbarUserMenu from "./navbar/NavbarUserMenu";
 import MobileMenu from "./navbar/MobileMenu";
+import { onAuthChange, signOut, User as SupabaseUser } from "@/services/supabase";
 
 const Navbar: React.FC = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [currentUser, setCurrentUser] = useState<SupabaseUser | null>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -32,7 +30,7 @@ const Navbar: React.FC = () => {
   }, [scrolled]);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    const unsubscribe = onAuthChange((user) => {
       setCurrentUser(user);
     });
 
@@ -41,7 +39,7 @@ const Navbar: React.FC = () => {
 
   const handleSignOut = async () => {
     try {
-      await auth.signOut();
+      await signOut();
       toast.success("Signed out successfully");
     } catch (error) {
       console.error("Sign out error:", error);

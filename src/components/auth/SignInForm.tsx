@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LucideLoader2 } from "lucide-react";
-import { signInWithEmail } from "@/services/firebase";
+import { signInWithEmail } from "@/services/supabase";
 import { toast } from "sonner";
 import GoogleSignInButton from "./GoogleSignInButton";
 

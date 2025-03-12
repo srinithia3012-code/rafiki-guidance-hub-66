@@ -2,7 +2,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { LucideLoader2 } from "lucide-react";
-import { signInWithGoogle, createUserProfile } from "@/services/firebase";
+import { signInWithGoogle } from "@/services/supabase";
 import { toast } from "sonner";
 
 interface GoogleSignInButtonProps {
@@ -20,23 +20,17 @@ const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
     setIsLoading(true);
     
     try {
-      const result = await signInWithGoogle();
-      if (result && result.user) {
-        // Success message
-        toast.success("Signed in successfully!");
-        onSuccess();
-      } else {
-        throw new Error("Failed to sign in");
-      }
+      await signInWithGoogle();
+      // Note: onSuccess will be called via auth state change in the parent component
+      // since OAuth redirects to a different URL
     } catch (error: any) {
       console.error("Sign in error:", error);
       // Display a more user-friendly error message
       const errorMessage = 
-        error.code === 'auth/popup-closed-by-user' 
+        error.message === 'User rejected the login request' 
           ? 'Sign-in canceled. Please try again.' 
           : error.message || "Failed to sign in. Please try again.";
       toast.error(errorMessage);
-    } finally {
       setIsLoading(false);
     }
   };

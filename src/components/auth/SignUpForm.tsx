@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LucideLoader2 } from "lucide-react";
-import { signUpWithEmail, createUserProfile } from "@/services/firebase";
+import { signUpWithEmail } from "@/services/supabase";
 import { toast } from "sonner";
 import GoogleSignInButton from "./GoogleSignInButton";
 
@@ -30,9 +30,8 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onSuccess }) => {
     setIsLoading(true);
 
     try {
-      const { user } = await signUpWithEmail(email, password);
-      await createUserProfile(user, { displayName: name });
-      toast.success("Account created successfully!");
+      await signUpWithEmail(email, password, { displayName: name });
+      toast.success("Account created successfully! Please check your email to confirm your account.");
       onSuccess();
     } catch (error: any) {
       console.error("Sign up error:", error);

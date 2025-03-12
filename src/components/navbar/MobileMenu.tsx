@@ -3,11 +3,11 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { User, LogOut } from "lucide-react";
 import NavLinks from "./NavLinks";
-import { User as FirebaseUser } from "firebase/auth";
+import { User as SupabaseUser } from "@supabase/supabase-js";
 
 interface MobileMenuProps {
   isOpen: boolean;
-  currentUser: FirebaseUser | null;
+  currentUser: SupabaseUser | null;
   onSignIn: () => void;
   onSignOut: () => void;
   onMenuClose: () => void;
