@@ -6,6 +6,6 @@ export interface Message {
   content: string;
   sender: "user" | "ai";
   timestamp: Date;
-  category: GuidanceCategory;
+  category?: GuidanceCategory;
   sentiment?: "positive" | "negative" | "neutral";
 }
