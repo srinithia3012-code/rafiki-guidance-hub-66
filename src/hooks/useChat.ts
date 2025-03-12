@@ -1,6 +1,7 @@
 
 import { useState, useRef } from "react";
-import { GuidanceCategory, sendMessageToAI, analyzeSentiment } from "@/services/ai";
+import { GuidanceCategory, sendMessageToAI } from "@/services/ai";
+import { analyzeSentiment } from "@/utils/sentimentAnalysis";
 import { Message } from "@/types/chat";
 import { toast } from "sonner";
 import { getCategoryWelcomeMessage } from "@/utils/chatUtils";

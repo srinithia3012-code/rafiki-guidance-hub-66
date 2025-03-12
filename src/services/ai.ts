@@ -46,34 +46,5 @@ export const sendMessageToAI = async (message: string, category: GuidanceCategor
   }
 };
 
-// Simple sentiment analysis function (to keep this functionality)
-export const analyzeSentiment = async (text: string) => {
-  // Simple keywords-based sentiment analysis
-  const positiveWords = ["happy", "great", "excellent", "good", "wonderful", "fantastic", "excited"];
-  const negativeWords = ["sad", "bad", "terrible", "anxious", "worried", "stressed", "depressed", "overwhelmed"];
-  
-  const lowerText = text.toLowerCase();
-  let positiveCount = 0;
-  let negativeCount = 0;
-  
-  positiveWords.forEach(word => {
-    if (lowerText.includes(word)) positiveCount++;
-  });
-  
-  negativeWords.forEach(word => {
-    if (lowerText.includes(word)) negativeCount++;
-  });
-  
-  let sentiment: "positive" | "negative" | "neutral" = "neutral";
-  let score = 0;
-  
-  if (positiveCount > negativeCount) {
-    sentiment = "positive";
-    score = positiveCount / (positiveCount + negativeCount);
-  } else if (negativeCount > positiveCount) {
-    sentiment = "negative";
-    score = -negativeCount / (positiveCount + negativeCount);
-  }
-  
-  return { sentiment, score };
-};
+// Re-export the sentiment analysis function for backward compatibility
+export { analyzeSentiment, type Sentiment } from "@/utils/sentimentAnalysis";

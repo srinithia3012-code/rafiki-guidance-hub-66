@@ -1,5 +1,6 @@
 
 import { GuidanceCategory } from "@/services/ai";
+import { Sentiment } from "@/utils/sentimentAnalysis";
 
 export interface Message {
   id: string;
@@ -7,5 +8,5 @@ export interface Message {
   sender: "user" | "ai";
   timestamp: Date;
   category?: GuidanceCategory;
-  sentiment?: "positive" | "negative" | "neutral";
+  sentiment?: Sentiment;
 }
