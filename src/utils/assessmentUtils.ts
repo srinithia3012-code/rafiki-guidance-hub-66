@@ -1,4 +1,6 @@
 
+import { AssessmentResult } from "@/types/assessment";
+
 // Get assessment title
 export const getAssessmentTitle = (assessmentId: string) => {
   switch (assessmentId) {
@@ -62,3 +64,22 @@ export const getAssessmentPromptContext = (assessment: any) => {
   
   return contextString;
 };
+
+// Transform assessment data for chart visualization
+export const getChartData = (result: AssessmentResult) => {
+  if (!result.score) return [];
+  
+  return Object.entries(result.score).map(([key, value]) => {
+    // Format key for display (e.g., "problem_solving" -> "Problem Solving")
+    const formattedKey = key
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+    
+    return {
+      name: formattedKey,
+      value: typeof value === 'number' ? value : parseFloat(value)
+    };
+  });
+};
+
