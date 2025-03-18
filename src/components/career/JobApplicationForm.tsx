@@ -1,17 +1,16 @@
-
 import React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { JOB_APPLICATION_STATUSES, JobApplication, createJobApplication, updateJobApplication } from "@/services/career";
-import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { format } from "date-fns";
 import FormTextInput from "./FormTextInput";
 import FormDatePicker from "./FormDatePicker";
 import FormSelect from "./FormSelect";
 import FormTextarea from "./FormTextarea";
+import FormActions from "./FormActions";
 
 const formSchema = z.object({
   company_name: z.string().min(1, "Company name is required"),
@@ -130,16 +129,11 @@ const JobApplicationForm: React.FC<JobApplicationFormProps> = ({
           className="min-h-[100px]"
         />
 
-        <div className="flex justify-end space-x-2 pt-2">
-          {onCancel && (
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancel
-            </Button>
-          )}
-          <Button type="submit">
-            {isEditing ? "Update Application" : "Save Application"}
-          </Button>
-        </div>
+        <FormActions 
+          isEditing={isEditing}
+          onCancel={onCancel}
+          submitText={isEditing ? "Update Application" : "Save Application"}
+        />
       </form>
     </Form>
   );
