@@ -71,10 +71,15 @@ serve(async (req) => {
         systemPrompt += "Focus on career planning, job opportunities, and professional development advice.";
         break;
       case "mental_health":
-        systemPrompt += "Focus on mental health support, emotional well-being, and self-care strategies.";
+        systemPrompt += "Focus on mental health support, emotional well-being, and self-care strategies. " +
+          "Provide empathetic responses and practical coping mechanisms for stress, anxiety, depression, and other mental health concerns. " +
+          "If someone appears to be in crisis, suggest they reach out to professional mental health services. " +
+          "Always validate their feelings and provide evidence-based suggestions when appropriate.";
         break;
       case "stress_management":
-        systemPrompt += "Focus on stress management techniques, work-life balance, and coping mechanisms.";
+        systemPrompt += "Focus on stress management techniques, work-life balance, mindfulness practices, and coping mechanisms. " +
+          "Provide specific breathing exercises, grounding techniques, and practical strategies to reduce stress. " +
+          "Suggest ways to incorporate self-care into daily routines and build resilience.";
         break;
       default:
         systemPrompt += "Provide general guidance on university life, academics, career, and well-being.";
@@ -151,6 +156,25 @@ serve(async (req) => {
     // Extract the AI's response text
     const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "I'm sorry, I couldn't generate a response.";
     console.log("Successfully generated AI response");
+
+    // If this is a mental health or stress management conversation, log it for the user
+    // This would normally save to a 'wellness_interactions' table
+    if (category === "mental_health" || category === "stress_management") {
+      try {
+        console.log("Logging wellness interaction for user:", session.user.id);
+        // In a real implementation, we would store this in Supabase
+        // const { error } = await supabaseClient.from('wellness_interactions').insert({
+        //   user_id: session.user.id,
+        //   message,
+        //   response: aiResponse,
+        //   category,
+        //   created_at: new Date()
+        // });
+        // if (error) console.error("Error logging interaction:", error);
+      } catch (logError) {
+        console.error("Error logging wellness interaction:", logError);
+      }
+    }
 
     return new Response(JSON.stringify({ text: aiResponse }), {
       status: 200,
