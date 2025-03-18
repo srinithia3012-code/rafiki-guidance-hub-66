@@ -66,47 +66,49 @@ const WellbeingPage: React.FC = () => {
         
         <SpaceMindfulness />
         
-        <MoodTracking 
-          moodRating={moodRating} 
-          setMoodRating={setMoodRating} 
-          resources={resources} 
-          user={user} 
-        />
-        
-        <div className="mb-8">
-          <AIWellbeingChat moodRating={moodRating} />
-        </div>
-        
-        <div className="mb-8">
-          <SelfAssessmentsSection filter="wellbeing" />
-        </div>
+        <div className="space-y-8 backdrop-blur-sm bg-white/30 rounded-xl p-6 shadow-lg border border-white/40">
+          <MoodTracking 
+            moodRating={moodRating} 
+            setMoodRating={setMoodRating} 
+            resources={resources} 
+            user={user} 
+          />
+          
+          <div>
+            <AIWellbeingChat moodRating={moodRating} />
+          </div>
+          
+          <div>
+            <SelfAssessmentsSection filter="wellbeing" />
+          </div>
 
-        <Tabs defaultValue="resources" className="w-full">
-          <TabsList className="grid grid-cols-4 mb-8">
-            <TabsTrigger value="resources">Resources</TabsTrigger>
-            <TabsTrigger value="activities">Self-Care</TabsTrigger>
-            <TabsTrigger value="community">Community</TabsTrigger>
-            <TabsTrigger value="professional">Professional Help</TabsTrigger>
-          </TabsList>
+          <Tabs defaultValue="resources" className="w-full">
+            <TabsList className="grid grid-cols-2 md:grid-cols-4 mb-8 bg-white/50">
+              <TabsTrigger value="resources">Resources</TabsTrigger>
+              <TabsTrigger value="activities">Self-Care</TabsTrigger>
+              <TabsTrigger value="community">Community</TabsTrigger>
+              <TabsTrigger value="professional">Professional Help</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="resources">
+              <ResourcesTab />
+            </TabsContent>
+            
+            <TabsContent value="activities">
+              <ActivitiesTab />
+            </TabsContent>
+            
+            <TabsContent value="community">
+              <CommunityTab />
+            </TabsContent>
+            
+            <TabsContent value="professional">
+              <ProfessionalHelpTab />
+            </TabsContent>
+          </Tabs>
           
-          <TabsContent value="resources">
-            <ResourcesTab />
-          </TabsContent>
-          
-          <TabsContent value="activities">
-            <ActivitiesTab />
-          </TabsContent>
-          
-          <TabsContent value="community">
-            <CommunityTab />
-          </TabsContent>
-          
-          <TabsContent value="professional">
-            <ProfessionalHelpTab />
-          </TabsContent>
-        </Tabs>
-        
-        <WellbeingCallToAction />
+          <WellbeingCallToAction />
+        </div>
       </div>
     </div>
   );

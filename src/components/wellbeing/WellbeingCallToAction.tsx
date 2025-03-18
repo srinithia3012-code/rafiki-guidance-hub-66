@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 
 const WellbeingCallToAction: React.FC = () => {
   return (
-    <div className="mt-12 bg-gradient-to-r from-purple-600 to-indigo-600 p-6 rounded-lg text-white shadow-lg">
+    <div className="mt-8 bg-gradient-to-r from-indigo-800/90 to-purple-800/90 backdrop-blur-md p-6 rounded-xl text-white shadow-xl border border-white/10">
       <div className="flex flex-col md:flex-row items-center gap-6">
         <div className="bg-white/20 backdrop-blur-sm p-4 rounded-lg">
           <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -17,7 +17,7 @@ const WellbeingCallToAction: React.FC = () => {
           <p className="text-white/80 mb-4">
             Our AI assistant can provide tailored advice for your specific mental health and wellbeing concerns.
           </p>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <Button asChild className="bg-white text-purple-700 hover:bg-white/90">
               <Link to="/chat">Chat with Rafiki AI</Link>
             </Button>
