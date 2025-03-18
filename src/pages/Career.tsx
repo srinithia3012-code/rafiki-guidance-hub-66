@@ -11,6 +11,11 @@ import AssessmentsTab from "@/components/career/tabs/AssessmentsTab";
 import ResourcesTab from "@/components/career/tabs/ResourcesTab";
 import AuthPrompt from "@/components/career/AuthPrompt";
 import GuidanceCallout from "@/components/career/GuidanceCallout";
+import AICareerRecommendations from "@/components/career/AICareerRecommendations";
+import SelfAssessmentsSection from "@/components/career/SelfAssessmentsSection";
+import CourseRecommendationsSection from "@/components/career/CourseRecommendationsSection";
+import MentorshipSection from "@/components/career/MentorshipSection";
+import SuccessStoriesSection from "@/components/career/SuccessStoriesSection";
 
 const CareerPage: React.FC = () => {
   const [user, setUser] = useState<any>(null);
@@ -82,6 +87,15 @@ const CareerPage: React.FC = () => {
           handleProfileSuccess={handleProfileSuccess}
         />
 
+        {/* AI Recommendations Section */}
+        {careerProfile && (
+          <AICareerRecommendations 
+            user={user} 
+            careerProfile={careerProfile} 
+            isLoading={isLoading} 
+          />
+        )}
+
         <Tabs defaultValue="explore" className="w-full">
           <TabsList className="grid grid-cols-3 mb-8">
             <TabsTrigger value="explore">Explore</TabsTrigger>
@@ -95,9 +109,17 @@ const CareerPage: React.FC = () => {
               careerProfile={careerProfile} 
               setIsProfileFormOpen={setIsProfileFormOpen} 
             />
+            {careerProfile && (
+              <>
+                <CourseRecommendationsSection careerProfile={careerProfile} />
+                <MentorshipSection careerProfile={careerProfile} />
+                <SuccessStoriesSection />
+              </>
+            )}
           </TabsContent>
           
           <TabsContent value="assessments">
+            <SelfAssessmentsSection />
             <AssessmentsTab />
           </TabsContent>
           
