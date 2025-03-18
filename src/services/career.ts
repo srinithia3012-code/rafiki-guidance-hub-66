@@ -119,7 +119,17 @@ export const getUserJobApplications = async (userId: string) => {
   }
 };
 
-export const createJobApplication = async (userId: string, applicationData: Omit<JobApplication, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+// Fixing the type definition to match expected parameters
+export type JobApplicationInput = {
+  company_name: string;
+  position: string;
+  application_date: string;
+  status: string;
+  next_steps?: string | null;
+  notes?: string | null;
+};
+
+export const createJobApplication = async (userId: string, applicationData: JobApplicationInput) => {
   try {
     const { data, error } = await supabase
       .from('job_applications')
