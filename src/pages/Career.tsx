@@ -1,13 +1,81 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Helmet } from "react-helmet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Briefcase, BookOpen, TrendingUp, GraduationCap, Users, FileText, CalendarCheck } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
+import CareerProfileForm from "@/components/career/CareerProfileForm";
+import JobApplicationsList from "@/components/career/JobApplicationsList";
+import { getCurrentUser } from "@/services/supabase";
+import { useCareerData } from "@/hooks/useCareerData";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const CareerPage: React.FC = () => {
+  const [user, setUser] = useState<any>(null);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [isProfileFormOpen, setIsProfileFormOpen] = useState(false);
+  const { toast: uiToast } = useToast();
+  
+  const { careerProfile, jobApplications, isLoading, refreshData } = useCareerData(user);
+
+  // Authentication check
+  useEffect(() => {
+    const checkUser = async () => {
+      try {
+        const currentUser = await getCurrentUser();
+        setUser(currentUser);
+      } catch (error) {
+        console.error("Error checking auth:", error);
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    };
+    
+    checkUser();
+    
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user || null);
+      }
+    );
+    
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
+  const handleProfileSuccess = () => {
+    setIsProfileFormOpen(false);
+    refreshData();
+  };
+
+  // If not logged in, show auth prompt
+  if (!isCheckingAuth && !user) {
+    return (
+      <div className="container mx-auto px-4 py-10 mt-16">
+        <div className="max-w-md mx-auto text-center">
+          <h1 className="text-2xl font-bold mb-4">Sign In Required</h1>
+          <p className="mb-6">Please sign in to access your career dashboard and personalized resources.</p>
+          <Button asChild>
+            <Link to="/signin">Sign In</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 py-8 mt-16 md:mt-20">
       <Helmet>
@@ -23,6 +91,105 @@ const CareerPage: React.FC = () => {
             to help you achieve your career goals.
           </p>
         </header>
+
+        {/* Profile Status Section */}
+        {isCheckingAuth || isLoading ? (
+          <Card className="mb-8">
+            <CardHeader>
+              <Skeleton className="h-8 w-3/4" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-24 w-full" />
+            </CardContent>
+          </Card>
+        ) : !careerProfile ? (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>Complete Your Career Profile</CardTitle>
+              <CardDescription>
+                Set up your profile to get personalized career recommendations
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="mb-4">Your career profile helps us tailor job recommendations and learning resources to your interests and skills.</p>
+              <Button onClick={() => setIsProfileFormOpen(true)}>Create Profile</Button>
+              
+              <Dialog open={isProfileFormOpen} onOpenChange={setIsProfileFormOpen}>
+                <DialogContent className="sm:max-w-[600px]">
+                  <DialogHeader>
+                    <DialogTitle>Create Your Career Profile</DialogTitle>
+                  </DialogHeader>
+                  {user && (
+                    <CareerProfileForm 
+                      userId={user.id} 
+                      onSuccess={handleProfileSuccess}
+                    />
+                  )}
+                </DialogContent>
+              </Dialog>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="mb-8">
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-center">
+                <CardTitle>Your Career Profile</CardTitle>
+                <Button variant="outline" size="sm" onClick={() => setIsProfileFormOpen(true)}>Edit Profile</Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500 mb-2">Education Level</h3>
+                  <p>{careerProfile.education_level || "Not specified"}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500 mb-2">Interests</h3>
+                  <div className="flex flex-wrap gap-1">
+                    {careerProfile.interests.length > 0 ? (
+                      careerProfile.interests.map((interest) => (
+                        <span key={interest} className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                          {interest}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-gray-400">No interests specified</span>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500 mb-2">Skills</h3>
+                  <div className="flex flex-wrap gap-1">
+                    {careerProfile.skills.length > 0 ? (
+                      careerProfile.skills.map((skill) => (
+                        <span key={skill} className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded">
+                          {skill}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-gray-400">No skills specified</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              <Dialog open={isProfileFormOpen} onOpenChange={setIsProfileFormOpen}>
+                <DialogContent className="sm:max-w-[600px]">
+                  <DialogHeader>
+                    <DialogTitle>Edit Your Career Profile</DialogTitle>
+                  </DialogHeader>
+                  {user && (
+                    <CareerProfileForm 
+                      userId={user.id}
+                      existingProfile={careerProfile}
+                      onSuccess={handleProfileSuccess}
+                    />
+                  )}
+                </DialogContent>
+              </Dialog>
+            </CardContent>
+          </Card>
+        )}
 
         <Tabs defaultValue="explore" className="w-full">
           <TabsList className="grid grid-cols-4 mb-8">
@@ -47,27 +214,83 @@ const CareerPage: React.FC = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <h3 className="font-medium mb-1">Based on your profile</h3>
-                      <p className="text-sm text-gray-600 mb-3">Here are some careers that might be a good fit:</p>
-                      <ul className="space-y-2">
-                        <li className="flex items-center gap-2 text-sm">
-                          <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                          Data Scientist (95% match)
-                        </li>
-                        <li className="flex items-center gap-2 text-sm">
-                          <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                          UX/UI Designer (92% match)
-                        </li>
-                        <li className="flex items-center gap-2 text-sm">
-                          <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                          Software Engineer (88% match)
-                        </li>
-                      </ul>
+                  {(!careerProfile && user) ? (
+                    <div className="bg-blue-50 p-4 rounded-lg text-center">
+                      <p className="text-sm text-blue-800 mb-3">Create your career profile to get personalized recommendations</p>
+                      <Button variant="outline" size="sm" onClick={() => setIsProfileFormOpen(true)}>Create Profile</Button>
                     </div>
-                    <Button className="w-full">View All Career Matches</Button>
-                  </div>
+                  ) : !user ? (
+                    <div className="bg-blue-50 p-4 rounded-lg text-center">
+                      <p className="text-sm text-blue-800 mb-3">Sign in to get personalized career recommendations</p>
+                      <Button variant="outline" size="sm" asChild>
+                        <Link to="/signin">Sign In</Link>
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <h3 className="font-medium mb-1">Based on your profile</h3>
+                        <p className="text-sm text-gray-600 mb-3">Here are some careers that might be a good fit:</p>
+                        <ul className="space-y-2">
+                          {careerProfile?.skills.includes("Python") || careerProfile?.skills.includes("Data Visualization") ? (
+                            <li className="flex items-center gap-2 text-sm">
+                              <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                              Data Scientist (95% match)
+                            </li>
+                          ) : null}
+                          
+                          {careerProfile?.skills.includes("UX/UI Design") ? (
+                            <li className="flex items-center gap-2 text-sm">
+                              <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                              UX/UI Designer (92% match)
+                            </li>
+                          ) : null}
+                          
+                          {careerProfile?.skills.includes("JavaScript") ? (
+                            <li className="flex items-center gap-2 text-sm">
+                              <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                              Software Engineer (88% match)
+                            </li>
+                          ) : null}
+                          
+                          {careerProfile?.skills.includes("Project Management") ? (
+                            <li className="flex items-center gap-2 text-sm">
+                              <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                              Project Manager (90% match)
+                            </li>
+                          ) : null}
+                          
+                          {careerProfile?.skills.includes("Leadership") ? (
+                            <li className="flex items-center gap-2 text-sm">
+                              <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                              Product Manager (87% match)
+                            </li>
+                          ) : null}
+                          
+                          {/* Fallback options if no matches */}
+                          {!careerProfile?.skills.some(skill => 
+                            ["Python", "Data Visualization", "UX/UI Design", "JavaScript", "Project Management", "Leadership"].includes(skill)
+                          ) && (
+                            <>
+                              <li className="flex items-center gap-2 text-sm">
+                                <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                                Data Scientist (85% match)
+                              </li>
+                              <li className="flex items-center gap-2 text-sm">
+                                <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                                UX/UI Designer (82% match)
+                              </li>
+                              <li className="flex items-center gap-2 text-sm">
+                                <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                                Software Engineer (78% match)
+                              </li>
+                            </>
+                          )}
+                        </ul>
+                      </div>
+                      <Button className="w-full">View All Career Matches</Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -86,36 +309,104 @@ const CareerPage: React.FC = () => {
                 <CardContent>
                   <div className="space-y-4">
                     <div className="bg-gray-50 p-4 rounded-lg">
-                      <h3 className="font-medium mb-1">Tech Industry Outlook</h3>
-                      <p className="text-sm text-gray-600 mb-2">Growth projections for the next 5 years:</p>
+                      <h3 className="font-medium mb-1">Industry Outlook</h3>
+                      <p className="text-sm text-gray-600 mb-2">
+                        {careerProfile && careerProfile.preferred_industries.length > 0
+                          ? `Growth projections for ${careerProfile.preferred_industries[0]}`
+                          : "Tech Industry Growth Projections"}
+                      </p>
                       <div className="space-y-3">
-                        <div>
-                          <div className="flex justify-between text-xs mb-1">
-                            <span>Machine Learning</span>
-                            <span>+35%</span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div className="bg-green-500 h-2 rounded-full" style={{ width: "35%" }}></div>
-                          </div>
-                        </div>
-                        <div>
-                          <div className="flex justify-between text-xs mb-1">
-                            <span>UX Design</span>
-                            <span>+28%</span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div className="bg-green-500 h-2 rounded-full" style={{ width: "28%" }}></div>
-                          </div>
-                        </div>
-                        <div>
-                          <div className="flex justify-between text-xs mb-1">
-                            <span>Full-stack Development</span>
-                            <span>+22%</span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div className="bg-green-500 h-2 rounded-full" style={{ width: "22%" }}></div>
-                          </div>
-                        </div>
+                        {careerProfile && careerProfile.preferred_industries.includes("Technology") ? (
+                          <>
+                            <div>
+                              <div className="flex justify-between text-xs mb-1">
+                                <span>Machine Learning</span>
+                                <span>+35%</span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div className="bg-green-500 h-2 rounded-full" style={{ width: "35%" }}></div>
+                              </div>
+                            </div>
+                            <div>
+                              <div className="flex justify-between text-xs mb-1">
+                                <span>UX Design</span>
+                                <span>+28%</span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div className="bg-green-500 h-2 rounded-full" style={{ width: "28%" }}></div>
+                              </div>
+                            </div>
+                            <div>
+                              <div className="flex justify-between text-xs mb-1">
+                                <span>Full-stack Development</span>
+                                <span>+22%</span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div className="bg-green-500 h-2 rounded-full" style={{ width: "22%" }}></div>
+                              </div>
+                            </div>
+                          </>
+                        ) : careerProfile && careerProfile.preferred_industries.includes("Healthcare") ? (
+                          <>
+                            <div>
+                              <div className="flex justify-between text-xs mb-1">
+                                <span>Telemedicine</span>
+                                <span>+45%</span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div className="bg-green-500 h-2 rounded-full" style={{ width: "45%" }}></div>
+                              </div>
+                            </div>
+                            <div>
+                              <div className="flex justify-between text-xs mb-1">
+                                <span>Healthcare Data Analysis</span>
+                                <span>+30%</span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div className="bg-green-500 h-2 rounded-full" style={{ width: "30%" }}></div>
+                              </div>
+                            </div>
+                            <div>
+                              <div className="flex justify-between text-xs mb-1">
+                                <span>Mental Health Services</span>
+                                <span>+25%</span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div className="bg-green-500 h-2 rounded-full" style={{ width: "25%" }}></div>
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div>
+                              <div className="flex justify-between text-xs mb-1">
+                                <span>Machine Learning</span>
+                                <span>+35%</span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div className="bg-green-500 h-2 rounded-full" style={{ width: "35%" }}></div>
+                              </div>
+                            </div>
+                            <div>
+                              <div className="flex justify-between text-xs mb-1">
+                                <span>UX Design</span>
+                                <span>+28%</span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div className="bg-green-500 h-2 rounded-full" style={{ width: "28%" }}></div>
+                              </div>
+                            </div>
+                            <div>
+                              <div className="flex justify-between text-xs mb-1">
+                                <span>Full-stack Development</span>
+                                <span>+22%</span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div className="bg-green-500 h-2 rounded-full" style={{ width: "22%" }}></div>
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                     <Button className="w-full">View Detailed Market Analysis</Button>
@@ -463,143 +754,61 @@ const CareerPage: React.FC = () => {
           <TabsContent value="applications" className="space-y-6">
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-blue-100 p-2 rounded-lg">
-                      <CalendarCheck className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <CardTitle>Job Application Tracker</CardTitle>
-                  </div>
-                  <Button>Add New Application</Button>
-                </div>
+                <CardTitle>Job Application Tracker</CardTitle>
                 <CardDescription>
                   Keep track of your job applications, interviews, and follow-ups
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="border rounded-lg overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Company
-                          </th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Position
-                          </th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Applied Date
-                          </th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Status
-                          </th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Next Steps
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        <tr>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
-                                <span className="text-gray-500 font-medium">TC</span>
-                              </div>
-                              <div className="ml-4">
-                                <div className="text-sm font-medium text-gray-900">Tech Corp</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">Data Scientist</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">Oct 15, 2023</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                              Interview Scheduled
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            Prepare for technical interview on Oct 25
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
-                                <span className="text-gray-500 font-medium">IN</span>
-                              </div>
-                              <div className="ml-4">
-                                <div className="text-sm font-medium text-gray-900">Innovate Inc.</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">UX Designer</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">Oct 10, 2023</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                              Application Submitted
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            Follow up on Oct 20 if no response
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
-                                <span className="text-gray-500 font-medium">DD</span>
-                              </div>
-                              <div className="ml-4">
-                                <div className="text-sm font-medium text-gray-900">Digital Dynamics</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">Software Engineer</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">Oct 5, 2023</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                              Assessment Completed
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            Waiting for assessment results
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
+                {isCheckingAuth || isLoading ? (
+                  <div className="space-y-4">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-40 w-full" />
                   </div>
-                </div>
+                ) : !user ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-600 mb-4">Sign in to track your job applications</p>
+                    <Button asChild>
+                      <Link to="/signin">Sign In</Link>
+                    </Button>
+                  </div>
+                ) : (
+                  <JobApplicationsList 
+                    userId={user.id}
+                    applications={jobApplications}
+                    onApplicationChange={refreshData}
+                  />
+                )}
                 
-                <div className="mt-6">
-                  <h3 className="font-medium mb-3">Application Insights</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <div className="text-sm text-gray-600 mb-1">Total Applications</div>
-                      <div className="text-2xl font-bold">12</div>
-                    </div>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <div className="text-sm text-gray-600 mb-1">Interviews Scheduled</div>
-                      <div className="text-2xl font-bold">3</div>
-                    </div>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <div className="text-sm text-gray-600 mb-1">Response Rate</div>
-                      <div className="text-2xl font-bold">33%</div>
+                {user && jobApplications.length > 0 && (
+                  <div className="mt-6">
+                    <h3 className="font-medium mb-3">Application Insights</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <div className="text-sm text-gray-600 mb-1">Total Applications</div>
+                        <div className="text-2xl font-bold">{jobApplications.length}</div>
+                      </div>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <div className="text-sm text-gray-600 mb-1">Interviews Scheduled</div>
+                        <div className="text-2xl font-bold">
+                          {jobApplications.filter(app => 
+                            ["Interview Scheduled", "Interview Completed", "Technical Interview", "Final Interview"].includes(app.status)
+                          ).length}
+                        </div>
+                      </div>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <div className="text-sm text-gray-600 mb-1">Response Rate</div>
+                        <div className="text-2xl font-bold">
+                          {jobApplications.length === 0 ? "0%" : 
+                            `${Math.round((jobApplications.filter(app => 
+                              !["Application Submitted"].includes(app.status)
+                            ).length / jobApplications.length) * 100)}%`
+                          }
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
