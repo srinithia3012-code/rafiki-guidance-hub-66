@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from 'sonner';
 import { useEffect, useState } from "react";
@@ -13,6 +14,7 @@ import AssessmentTaking from "@/pages/AssessmentTaking";
 import AssessmentResults from "@/pages/AssessmentResults";
 import Navbar from "@/components/Navbar";
 import { supabase } from "@/integrations/supabase/client";
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import "./App.css";
 
 function App() {
@@ -56,26 +58,28 @@ function App() {
   }
 
   return (
-    <Router>
-      <Toaster position="top-center" />
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <main className="flex-grow">
-          <Routes>
-            <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <Index />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/chat" element={<ChatPage />} />
-            <Route path="/career" element={<CareerPage />} />
-            <Route path="/wellbeing" element={<WellbeingPage />} />
-            <Route path="/assessments" element={<Assessments />} />
-            <Route path="/assessments/:assessmentId" element={<AssessmentTaking />} />
-            <Route path="/assessment-results" element={<AssessmentResults />} />
-            <Route path="/auth/callback" element={<AuthCallback />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </main>
-      </div>
-    </Router>
+    <ThemeProvider>
+      <Router>
+        <Toaster position="top-center" />
+        <div className="min-h-screen flex flex-col">
+          <Navbar />
+          <main className="flex-grow">
+            <Routes>
+              <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <Index />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/chat" element={<ChatPage />} />
+              <Route path="/career" element={<CareerPage />} />
+              <Route path="/wellbeing" element={<WellbeingPage />} />
+              <Route path="/assessments" element={<Assessments />} />
+              <Route path="/assessments/:assessmentId" element={<AssessmentTaking />} />
+              <Route path="/assessment-results" element={<AssessmentResults />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </main>
+        </div>
+      </Router>
+    </ThemeProvider>
   );
 }
 

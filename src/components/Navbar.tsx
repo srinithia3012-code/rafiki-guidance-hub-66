@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import AuthModal from "./AuthModal";
 import { Logo, NavLinks, NavbarUserMenu, MobileMenu } from "./navbar";
 import { onAuthChange, signOut, User as SupabaseUser } from "@/services/supabase";
+import ThemeToggle from "./theme/ThemeToggle";
 
 const Navbar: React.FC = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -57,7 +58,7 @@ const Navbar: React.FC = () => {
     <>
       <header
         className={`fixed top-0 left-0 right-0 w-full z-40 transition-all duration-300 ${
-          scrolled ? "bg-white/80 backdrop-blur shadow-sm py-3" : "bg-transparent py-4 sm:py-5"
+          scrolled ? "bg-white/80 dark:bg-gray-900/80 backdrop-blur shadow-sm py-3" : "bg-transparent py-4 sm:py-5"
         }`}
       >
         <div className="container mx-auto px-4 flex items-center justify-between">
@@ -68,6 +69,9 @@ const Navbar: React.FC = () => {
 
           {/* User Menu or Sign In Button */}
           <div className="flex items-center gap-2 md:gap-4 z-50">
+            {/* Theme Toggle */}
+            <ThemeToggle />
+            
             {currentUser ? (
               <NavbarUserMenu currentUser={currentUser} />
             ) : (
