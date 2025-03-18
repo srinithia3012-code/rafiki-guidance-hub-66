@@ -14,7 +14,6 @@ const NavLinks: React.FC<NavLinksProps> = ({ currentUser }) => {
     { name: "Chat", href: "/chat", showWhenLoggedIn: true, showAlways: true },
     { name: "Career", href: "/career", showWhenLoggedIn: true, showAlways: true },
     { name: "Wellbeing", href: "/wellbeing", showWhenLoggedIn: true, showAlways: true },
-    { name: "Assessments", href: "/assessments", showWhenLoggedIn: true },
   ];
 
   const visibleLinks = links.filter(link => {
