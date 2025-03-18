@@ -71,8 +71,12 @@ const JobApplicationForm: React.FC<JobApplicationFormProps> = ({
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       const applicationData = {
-        ...values,
+        company_name: values.company_name,
+        position: values.position,
         application_date: format(values.application_date, "yyyy-MM-dd"),
+        status: values.status,
+        next_steps: values.next_steps,
+        notes: values.notes,
       };
       
       let application;

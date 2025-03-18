@@ -119,7 +119,7 @@ export const getUserJobApplications = async (userId: string) => {
   }
 };
 
-// Fixing the type definition to match expected parameters
+// Update the type definition to match expected parameters
 export type JobApplicationInput = {
   company_name: string;
   position: string;
