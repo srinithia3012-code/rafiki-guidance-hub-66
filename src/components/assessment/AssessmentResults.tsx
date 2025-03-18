@@ -3,11 +3,18 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { format } from "date-fns";
+import { FileText } from "lucide-react";
 import { getUserAssessmentResults } from "@/services/assessment";
 import { AssessmentResult } from "@/types/assessment";
-import { FileText, BarChart2 } from "lucide-react";
+
+// Import extracted components
+import ResultsLoading from "./ResultsLoading";
+import NoResultsFound from "./NoResultsFound";
+import ResultsSummaryTab from "./ResultsSummaryTab";
+import ResultsDetailsTab from "./ResultsDetailsTab";
+
+// Import utility functions
+import { getAssessmentTitle, getChartData } from "@/utils/assessmentUtils";
 
 interface AssessmentResultsProps {
   userId: string;
@@ -61,67 +68,12 @@ const AssessmentResults: React.FC<AssessmentResultsProps> = ({
     }
   }, [userId, category, maxResults]);
   
-  const getChartData = (result: AssessmentResult) => {
-    if (!result.score) return [];
-    
-    return Object.entries(result.score).map(([key, value]) => ({
-      name: key.split("_").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" "),
-      value: value
-    }));
-  };
-  
-  const getAssessmentTitle = (assessmentId: string) => {
-    switch (assessmentId) {
-      case "career-personality":
-        return "Career Personality";
-      case "skills-assessment":
-        return "Skills Assessment";
-      case "interest-inventory":
-        return "Interest Inventory";
-      case "mental-wellbeing":
-        return "Mental Wellbeing";
-      case "anxiety-screening":
-        return "Anxiety Screening";
-      case "learning-style":
-        return "Learning Style";
-      default:
-        return assessmentId;
-    }
-  };
-  
   if (isLoading) {
-    return (
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Assessment Results</CardTitle>
-          <CardDescription>Loading your assessment results...</CardDescription>
-        </CardHeader>
-        <CardContent className="flex justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-rafiki-600"></div>
-        </CardContent>
-      </Card>
-    );
+    return <ResultsLoading />;
   }
   
   if (results.length === 0) {
-    return (
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Assessment Results</CardTitle>
-          <CardDescription>
-            You haven't completed any assessments yet
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="text-center py-6">
-          <p className="mb-4">
-            Take some assessments to get personalized guidance from Rafiki AI
-          </p>
-          <Button asChild>
-            <a href="/assessments">Take an Assessment</a>
-          </Button>
-        </CardContent>
-      </Card>
-    );
+    return <NoResultsFound />;
   }
   
   return (
@@ -144,89 +96,21 @@ const AssessmentResults: React.FC<AssessmentResultsProps> = ({
           
           <TabsContent value="summary">
             {selectedResult && (
-              <div>
-                <div className="mb-4">
-                  <h3 className="text-lg font-medium mb-2">
-                    {getAssessmentTitle(selectedResult.assessment_id)}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Completed on {format(new Date(selectedResult.completed_at), "MMMM d, yyyy")}
-                  </p>
-                </div>
-                
-                {selectedResult.score && Object.keys(selectedResult.score).length > 0 ? (
-                  <div className="h-64 w-full mt-4">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={getChartData(selectedResult)}
-                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis domain={[0, 100]} />
-                        <Tooltip />
-                        <Bar dataKey="value" fill="#6366F1" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                ) : (
-                  <div className="py-4 text-center">
-                    <BarChart2 className="h-12 w-12 mx-auto text-gray-300 mb-2" />
-                    <p>No score data available for this assessment</p>
-                  </div>
-                )}
-                
-                <div className="mt-4">
-                  {results.length > 1 && (
-                    <div className="space-x-2">
-                      {results.map((result, index) => (
-                        <Button
-                          key={result.id}
-                          variant={selectedResult.id === result.id ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setSelectedResult(result)}
-                        >
-                          {getAssessmentTitle(result.assessment_id)}
-                        </Button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
+              <ResultsSummaryTab 
+                selectedResult={selectedResult}
+                results={results}
+                setSelectedResult={setSelectedResult}
+                getAssessmentTitle={getAssessmentTitle}
+                getChartData={getChartData}
+              />
             )}
           </TabsContent>
           
           <TabsContent value="details">
-            <div className="space-y-4">
-              {results.map((result) => (
-                <Card key={result.id} className="bg-gray-50">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base">
-                      {getAssessmentTitle(result.assessment_id)}
-                    </CardTitle>
-                    <CardDescription>
-                      Completed on {format(new Date(result.completed_at), "MMMM d, yyyy 'at' h:mm a")}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-sm">
-                      <p className="font-medium">Key Insights:</p>
-                      <ul className="list-disc list-inside mt-2 ml-4 space-y-1 text-gray-700">
-                        {result.score ? (
-                          Object.entries(result.score).map(([key, value], index) => (
-                            <li key={index}>
-                              {key.split("_").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ")}: {value}%
-                            </li>
-                          ))
-                        ) : (
-                          <li>No detailed insights available</li>
-                        )}
-                      </ul>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <ResultsDetailsTab 
+              results={results}
+              getAssessmentTitle={getAssessmentTitle}
+            />
           </TabsContent>
         </Tabs>
         
