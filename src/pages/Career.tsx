@@ -9,7 +9,6 @@ import CareerProfileSection from "@/components/career/CareerProfile";
 import ExploreTab from "@/components/career/tabs/ExploreTab";
 import AssessmentsTab from "@/components/career/tabs/AssessmentsTab";
 import ResourcesTab from "@/components/career/tabs/ResourcesTab";
-import ApplicationsTab from "@/components/career/tabs/ApplicationsTab";
 import AuthPrompt from "@/components/career/AuthPrompt";
 import GuidanceCallout from "@/components/career/GuidanceCallout";
 
@@ -18,7 +17,7 @@ const CareerPage: React.FC = () => {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isProfileFormOpen, setIsProfileFormOpen] = useState(false);
   
-  const { careerProfile, jobApplications, isLoading, refreshData } = useCareerData(user);
+  const { careerProfile, isLoading, refreshData } = useCareerData(user);
 
   // Authentication check
   useEffect(() => {
@@ -84,11 +83,10 @@ const CareerPage: React.FC = () => {
         />
 
         <Tabs defaultValue="explore" className="w-full">
-          <TabsList className="grid grid-cols-4 mb-8">
+          <TabsList className="grid grid-cols-3 mb-8">
             <TabsTrigger value="explore">Explore</TabsTrigger>
             <TabsTrigger value="assessments">Assessments</TabsTrigger>
             <TabsTrigger value="resources">Resources</TabsTrigger>
-            <TabsTrigger value="applications">Applications</TabsTrigger>
           </TabsList>
           
           <TabsContent value="explore">
@@ -105,16 +103,6 @@ const CareerPage: React.FC = () => {
           
           <TabsContent value="resources">
             <ResourcesTab />
-          </TabsContent>
-          
-          <TabsContent value="applications">
-            <ApplicationsTab 
-              isCheckingAuth={isCheckingAuth}
-              isLoading={isLoading}
-              user={user}
-              jobApplications={jobApplications}
-              refreshData={refreshData}
-            />
           </TabsContent>
         </Tabs>
         
