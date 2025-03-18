@@ -26,7 +26,6 @@ const AssessmentProgress: React.FC<AssessmentProgressProps> = ({
       <Progress 
         value={progressPercentage} 
         className="h-2 bg-slate-200" 
-        indicatorClassName="bg-gradient-to-r from-indigo-500 to-purple-600"
       />
     </div>
   );
