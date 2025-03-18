@@ -9,8 +9,6 @@ import SelfAssessmentsSection from "@/components/career/SelfAssessmentsSection";
 import SpaceMindfulness from "@/components/wellbeing/SpaceMindfulness";
 import MoodTracking from "@/components/wellbeing/MoodTracking";
 import ResourcesTab from "@/components/wellbeing/tabs/ResourcesTab";
-import ActivitiesTab from "@/components/wellbeing/tabs/ActivitiesTab";
-import CommunityTab from "@/components/wellbeing/tabs/CommunityTab";
 import ProfessionalHelpTab from "@/components/wellbeing/tabs/ProfessionalHelpTab";
 import WellbeingCallToAction from "@/components/wellbeing/WellbeingCallToAction";
 
@@ -83,23 +81,13 @@ const WellbeingPage: React.FC = () => {
           </div>
 
           <Tabs defaultValue="resources" className="w-full">
-            <TabsList className="grid grid-cols-2 md:grid-cols-4 mb-8 bg-white/50">
+            <TabsList className="grid grid-cols-2 mb-8 bg-white/50">
               <TabsTrigger value="resources">Resources</TabsTrigger>
-              <TabsTrigger value="activities">Self-Care</TabsTrigger>
-              <TabsTrigger value="community">Community</TabsTrigger>
               <TabsTrigger value="professional">Professional Help</TabsTrigger>
             </TabsList>
             
             <TabsContent value="resources">
               <ResourcesTab />
-            </TabsContent>
-            
-            <TabsContent value="activities">
-              <ActivitiesTab />
-            </TabsContent>
-            
-            <TabsContent value="community">
-              <CommunityTab />
             </TabsContent>
             
             <TabsContent value="professional">

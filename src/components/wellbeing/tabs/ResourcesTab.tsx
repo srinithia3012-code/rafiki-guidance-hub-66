@@ -8,7 +8,7 @@ import { Link } from "react-router-dom";
 const ResourcesTab: React.FC = () => {
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center gap-3">
@@ -61,56 +61,6 @@ const ResourcesTab: React.FC = () => {
               </div>
               
               <Button variant="link" className="w-full">View All Resources</Button>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-3">
-              <div className="bg-indigo-100 p-2 rounded-lg">
-                <BookOpen className="h-5 w-5 text-indigo-600" />
-              </div>
-              <CardTitle>Self-Assessment Tools</CardTitle>
-            </div>
-            <CardDescription>
-              Evaluate aspects of your mental health and wellbeing
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="border rounded-lg p-4">
-                <h3 className="font-medium mb-1">Stress Level Assessment</h3>
-                <p className="text-sm text-gray-600 mb-3">
-                  Evaluate your current stress levels and get personalized recommendations.
-                </p>
-                <div className="flex justify-between items-center">
-                  <span className="text-xs text-gray-500">5 minutes</span>
-                  <Button size="sm">Take Assessment</Button>
-                </div>
-              </div>
-              
-              <div className="border rounded-lg p-4">
-                <h3 className="font-medium mb-1">Sleep Quality Questionnaire</h3>
-                <p className="text-sm text-gray-600 mb-3">
-                  Analyze your sleep patterns and learn how to improve your rest.
-                </p>
-                <div className="flex justify-between items-center">
-                  <span className="text-xs text-gray-500">3 minutes</span>
-                  <Button size="sm">Take Assessment</Button>
-                </div>
-              </div>
-              
-              <div className="border rounded-lg p-4">
-                <h3 className="font-medium mb-1">Mental Wellbeing Check</h3>
-                <p className="text-sm text-gray-600 mb-3">
-                  Based on the WHO-5 Well-Being Index to assess your overall mental health.
-                </p>
-                <div className="flex justify-between items-center">
-                  <span className="text-xs text-gray-500">4 minutes</span>
-                  <Button size="sm">Take Assessment</Button>
-                </div>
-              </div>
             </div>
           </CardContent>
         </Card>
