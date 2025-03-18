@@ -7,6 +7,7 @@ import ChatPage from "@/pages/Chat";
 import CareerPage from "@/pages/Career";
 import WellbeingPage from "@/pages/Wellbeing";
 import AuthCallback from "@/pages/AuthCallback";
+import Dashboard from "@/pages/Dashboard";
 import Navbar from "@/components/Navbar";
 import "./App.css";
 
@@ -19,6 +20,7 @@ function App() {
         <main className="flex-grow">
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/chat" element={<ChatPage />} />
             <Route path="/career" element={<CareerPage />} />
             <Route path="/wellbeing" element={<WellbeingPage />} />

@@ -26,7 +26,7 @@ const AuthCallback: React.FC = () => {
         if (data.session) {
           console.log('Authentication successful:', data.session);
           toast.success('Successfully signed in!');
-          navigate('/');
+          navigate('/dashboard'); // Redirect to Dashboard instead of home
         } else {
           // No session found
           console.error('No session found during callback');
@@ -66,7 +66,7 @@ const AuthCallback: React.FC = () => {
           <>
             <div className="text-green-500 text-xl mb-4">✓</div>
             <p className="text-lg font-medium text-green-600">Successfully authenticated!</p>
-            <p className="text-sm text-gray-500 mt-2">Redirecting you to the home page...</p>
+            <p className="text-sm text-gray-500 mt-2">Redirecting you to your dashboard...</p>
           </>
         )}
       </div>
