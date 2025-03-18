@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Heart, Send, RefreshCw, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useChat } from "@/hooks/useChat";
+import { useChat } from "@/hooks/chat/useChat";
 import MessageItem from "@/components/chat/MessageItem";
 import TypingIndicator from "@/components/chat/TypingIndicator";
 
