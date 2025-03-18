@@ -23,7 +23,11 @@ const AssessmentProgress: React.FC<AssessmentProgressProps> = ({
         </span>
         <span className="text-sm">{progressPercentage}% complete</span>
       </div>
-      <Progress value={progressPercentage} className="h-2" />
+      <Progress 
+        value={progressPercentage} 
+        className="h-2 bg-slate-200" 
+        indicatorClassName="bg-gradient-to-r from-indigo-500 to-purple-600"
+      />
     </div>
   );
 };

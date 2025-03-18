@@ -9,6 +9,7 @@ import AIWellbeingChat from "@/components/wellbeing/AIWellbeingChat";
 import SelfAssessmentsSection from "@/components/career/SelfAssessmentsSection";
 import { getWellnessResources } from "@/services/ai";
 import { supabase } from "@/integrations/supabase/client";
+import SpaceMindfulness from "@/components/wellbeing/SpaceMindfulness";
 
 const WellbeingPage: React.FC = () => {
   const [moodRating, setMoodRating] = useState<number | null>(null);
@@ -67,6 +68,8 @@ const WellbeingPage: React.FC = () => {
             and maintain your overall wellbeing.
           </p>
         </header>
+        
+        <SpaceMindfulness />
         
         <div className="mb-8 bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-xl shadow-sm">
           <h2 className="text-xl font-semibold mb-4">How are you feeling today?</h2>
@@ -951,3 +954,4 @@ const WellbeingPage: React.FC = () => {
 };
 
 export default WellbeingPage;
+
