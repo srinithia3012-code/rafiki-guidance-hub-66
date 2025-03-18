@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, X, User } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { toast } from "sonner";
 import AuthModal from "./AuthModal";
 import { Logo, NavLinks, NavbarUserMenu, MobileMenu } from "./navbar";
@@ -64,7 +64,7 @@ const Navbar: React.FC = () => {
           <Logo />
 
           {/* Desktop Navigation */}
-          <NavLinks />
+          <NavLinks currentUser={currentUser} />
 
           {/* User Menu or Sign In Button */}
           <div className="flex items-center gap-2 md:gap-4 z-50">

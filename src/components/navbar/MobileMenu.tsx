@@ -2,7 +2,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { User as SupabaseUser } from "@supabase/supabase-js";
-import { LogOut, User } from "lucide-react";
+import { LogOut, User, LayoutDashboard } from "lucide-react";
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -52,6 +52,16 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
           )}
 
           <nav className="flex flex-col space-y-3 mt-4">
+            {currentUser && (
+              <Link
+                to="/dashboard"
+                className="p-3 hover:bg-gray-50 rounded-md flex items-center gap-2"
+                onClick={onMenuClose}
+              >
+                <LayoutDashboard className="h-4 w-4" />
+                Dashboard
+              </Link>
+            )}
             <Link
               to="/"
               className="p-3 hover:bg-gray-50 rounded-md"
@@ -65,6 +75,20 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
               onClick={onMenuClose}
             >
               Chat
+            </Link>
+            <Link
+              to="/career"
+              className="p-3 hover:bg-gray-50 rounded-md"
+              onClick={onMenuClose}
+            >
+              Career
+            </Link>
+            <Link
+              to="/wellbeing"
+              className="p-3 hover:bg-gray-50 rounded-md"
+              onClick={onMenuClose}
+            >
+              Wellbeing
             </Link>
           </nav>
 
