@@ -6,6 +6,8 @@ const NavLinks: React.FC = () => {
   const links = [
     { name: "Home", href: "/" },
     { name: "Chat", href: "/chat" },
+    { name: "Career", href: "/career" },
+    { name: "Wellbeing", href: "/wellbeing" },
   ];
 
   return (

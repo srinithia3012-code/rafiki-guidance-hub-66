@@ -4,6 +4,8 @@ import { Toaster } from 'sonner';
 import Index from "@/pages/Index";
 import NotFound from "@/pages/NotFound";
 import ChatPage from "@/pages/Chat";
+import CareerPage from "@/pages/Career";
+import WellbeingPage from "@/pages/Wellbeing";
 import AuthCallback from "@/pages/AuthCallback";
 import Navbar from "@/components/Navbar";
 import "./App.css";
@@ -18,6 +20,8 @@ function App() {
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/chat" element={<ChatPage />} />
+            <Route path="/career" element={<CareerPage />} />
+            <Route path="/wellbeing" element={<WellbeingPage />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
