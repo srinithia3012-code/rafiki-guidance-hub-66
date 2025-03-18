@@ -6,28 +6,12 @@ import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { JOB_APPLICATION_STATUSES, JobApplication, createJobApplication, updateJobApplication } from "@/services/career";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Form } from "@/components/ui/form";
 import { format } from "date-fns";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import FormTextInput from "./FormTextInput";
+import FormDatePicker from "./FormDatePicker";
+import FormSelect from "./FormSelect";
+import FormTextarea from "./FormTextarea";
 
 const formSchema = z.object({
   company_name: z.string().min(1, "Company name is required"),
@@ -103,129 +87,47 @@ const JobApplicationForm: React.FC<JobApplicationFormProps> = ({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
+        <FormTextInput 
+          form={form}
           name="company_name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Company Name</FormLabel>
-              <FormControl>
-                <Input placeholder="Enter company name" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+          label="Company Name"
+          placeholder="Enter company name"
         />
 
-        <FormField
-          control={form.control}
+        <FormTextInput 
+          form={form}
           name="position"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Position</FormLabel>
-              <FormControl>
-                <Input placeholder="Enter job position" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+          label="Position"
+          placeholder="Enter job position"
         />
 
-        <FormField
-          control={form.control}
+        <FormDatePicker 
+          form={form}
           name="application_date"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Application Date</FormLabel>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full pl-3 text-left font-normal",
-                        !field.value && "text-muted-foreground"
-                      )}
-                    >
-                      {field.value ? (
-                        format(field.value, "PPP")
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={field.value}
-                    onSelect={field.onChange}
-                    disabled={(date) =>
-                      date > new Date() || date < new Date("1900-01-01")
-                    }
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-              <FormMessage />
-            </FormItem>
-          )}
+          label="Application Date"
         />
 
-        <FormField
-          control={form.control}
+        <FormSelect 
+          form={form}
           name="status"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Status</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select application status" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {JOB_APPLICATION_STATUSES.map((status) => (
-                    <SelectItem key={status} value={status}>{status}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
+          label="Status"
+          placeholder="Select application status"
+          options={JOB_APPLICATION_STATUSES}
         />
 
-        <FormField
-          control={form.control}
+        <FormTextInput 
+          form={form}
           name="next_steps"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Next Steps</FormLabel>
-              <FormControl>
-                <Input placeholder="E.g., Follow up by July 15" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+          label="Next Steps"
+          placeholder="E.g., Follow up by July 15"
         />
 
-        <FormField
-          control={form.control}
+        <FormTextarea 
+          form={form}
           name="notes"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Notes</FormLabel>
-              <FormControl>
-                <Textarea 
-                  placeholder="Additional notes about the application" 
-                  className="min-h-[100px]"
-                  {...field} 
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+          label="Notes"
+          placeholder="Additional notes about the application"
+          className="min-h-[100px]"
         />
 
         <div className="flex justify-end space-x-2 pt-2">
