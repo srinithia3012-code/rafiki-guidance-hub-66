@@ -1,6 +1,7 @@
 
 import React from "react";
-import { Briefcase, BookOpen, Brain, Heart, Users, BookMarked, GraduationCap, Clock } from "lucide-react";
+import { Briefcase, BookOpen, Brain, Heart, Users, Clock } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const features = [
   {
@@ -8,48 +9,42 @@ const features = [
     description: "Get AI-powered recommendations for career paths based on your interests, strengths, and academic background.",
     icon: Briefcase,
     color: "from-blue-400 to-blue-600",
+    link: "/career"
   },
   {
     title: "Academic Planning",
     description: "Receive personalized study plans, course recommendations, and learning resources tailored to your goals.",
     icon: BookOpen,
     color: "from-emerald-400 to-emerald-600",
+    link: "/chat?category=academic"
   },
   {
     title: "Emotional Support",
     description: "Access 24/7 AI counseling for stress, anxiety, and other emotional challenges common among students.",
     icon: Heart,
     color: "from-red-400 to-red-600",
+    link: "/wellbeing"
   },
   {
     title: "Mental Wellness",
     description: "Learn evidence-based techniques for managing stress, improving focus, and maintaining mental health.",
     icon: Brain,
     color: "from-purple-400 to-purple-600",
+    link: "/wellbeing"
   },
   {
     title: "Community Support",
     description: "Connect with peers facing similar challenges and share experiences in moderated group discussions.",
     icon: Users,
     color: "from-amber-400 to-amber-600",
-  },
-  {
-    title: "Resource Library",
-    description: "Access a curated collection of articles, videos, and tools on academic success and personal development.",
-    icon: BookMarked,
-    color: "from-cyan-400 to-cyan-600",
-  },
-  {
-    title: "Graduate Preparation",
-    description: "Get guidance on graduate school applications, internships, and transitioning to professional life.",
-    icon: GraduationCap,
-    color: "from-indigo-400 to-indigo-600",
+    link: "/wellbeing?tab=community"
   },
   {
     title: "24/7 Availability",
     description: "Receive instant support whenever you need it, regardless of time zones or schedules.",
     icon: Clock,
     color: "from-teal-400 to-teal-600",
+    link: "/chat"
   },
 ];
 
@@ -72,24 +67,27 @@ const Features: React.FC = () => {
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((feature, index) => (
-            <div
+            <Link 
+              to={feature.link} 
               key={index}
-              className="relative bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-300 group hover:-translate-y-1 border border-gray-100 h-full flex flex-col"
+              className="block transition-transform duration-300 hover:translate-y-[-8px]"
             >
-              <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${feature.color} opacity-5 rounded-bl-full`} />
-              
-              <div
-                className={`w-12 h-12 rounded-lg flex items-center justify-center text-white bg-gradient-to-r ${feature.color} shadow-md mb-4`}
-              >
-                <feature.icon className="h-6 w-6" />
+              <div className="relative bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-300 group h-full flex flex-col border border-gray-100">
+                <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${feature.color} opacity-5 rounded-bl-full`} />
+                
+                <div
+                  className={`w-12 h-12 rounded-lg flex items-center justify-center text-white bg-gradient-to-r ${feature.color} shadow-md mb-4`}
+                >
+                  <feature.icon className="h-6 w-6" />
+                </div>
+                
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">{feature.title}</h3>
+                
+                <p className="text-gray-600 text-sm flex-grow">{feature.description}</p>
               </div>
-              
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">{feature.title}</h3>
-              
-              <p className="text-gray-600 text-sm flex-grow">{feature.description}</p>
-            </div>
+            </Link>
           ))}
         </div>
       </div>
