@@ -1,67 +1,114 @@
-# Welcome to your Lovable project
 
-## Project info
+# Rafiki AI - Student Guidance & Wellbeing Assistant
 
-**URL**: https://lovable.dev/projects/de042491-4dcd-416d-88d3-e51379625cdc
+Rafiki AI is a comprehensive student support platform designed to provide personalized guidance, academic planning, career advice, and wellbeing resources for university students.
 
-## How can I edit this code?
+## 🌟 Features
 
-There are several ways of editing your application.
+### General Capabilities
+- **AI-Powered Chat Interface**: Natural conversation with contextual understanding of student needs
+- **Authentication System**: Secure login with Google, LinkedIn, or email/password
+- **Responsive Design**: Fully responsive interface that works on all devices
 
-**Use Lovable**
+### Academic & Career Guidance
+- **Career Assessment Tools**: Discover suitable career paths based on interests and strengths
+- **Job Market Insights**: View industry trends, job availability, and salary information
+- **Resume & Interview Preparation**: Tools to enhance job application readiness
+- **Educational Resources**: Access courses and certifications relevant to career goals
+- **Skill Development Plans**: Personalized roadmaps for developing professional skills
 
-Changes made via Lovable will be committed automatically to this repo.
+### Mental Wellbeing Support
+- **Emotional Support**: 24/7 AI counseling for stress, anxiety, and emotional challenges
+- **Wellbeing Assessment**: Evaluate mental and emotional health through guided assessments
+- **Stress Management Techniques**: Evidence-based strategies for managing academic pressure
+- **Mindfulness Practices**: Guided meditation and mindfulness exercises
+- **Crisis Resources**: Access to emergency resources and professional support options
+- **Mood Tracking**: Monitor emotional patterns over time
 
-**Use your preferred IDE**
+## 🚀 Technology Stack
+- **Frontend**: React, TypeScript, Vite
+- **Styling**: TailwindCSS, shadcn/ui
+- **Authentication**: Supabase Auth
+- **Database**: Supabase
+- **AI Integration**: Custom AI models for conversation and sentiment analysis
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 📋 Getting Started
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Prerequisites
+- Node.js (v18 or higher)
+- npm or yarn package manager
+- Supabase account (for authentication and database)
+- AI service API keys (if deploying your own instance)
 
-Follow these steps:
+### Installation
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+1. Clone the repository
+   ```bash
+   git clone <repository-url>
+   cd rafiki-ai
+   ```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+2. Install dependencies
+   ```bash
+   npm install
+   # or
+   yarn
+   ```
 
-# Step 3: Install the necessary dependencies.
-npm i
+3. Configure environment variables
+   Create a `.env` file in the root directory with the following variables:
+   ```
+   VITE_SUPABASE_URL=your_supabase_url
+   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   VITE_AI_API_KEY=your_ai_service_key
+   ```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+4. Run the development server
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   ```
 
-**Edit a file directly in GitHub**
+5. Open [http://localhost:8080](http://localhost:8080) in your browser to view the application
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Supabase Setup
 
-**Use GitHub Codespaces**
+1. Create a Supabase project at [supabase.com](https://supabase.com)
+2. Enable authentication providers (Email, Google, LinkedIn) in the Auth settings
+3. Create required database tables:
+   - `profiles`: Store user profile information
+   - `chats`: Store chat history (optional)
+4. Set up Row Level Security policies for data protection
+5. Configure authentication redirect URLs in your Supabase project settings
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 🌐 Deployment
 
-## What technologies are used for this project?
+The application can be deployed to various platforms:
 
-This project is built with .
+- **Netlify**: Connect your GitHub repository for automatic deployments
+- **Vercel**: Import the project and configure build settings
+- **GitHub Pages**: Use GitHub Actions for automated deployment
+- **Custom Domain**: Configure DNS settings to use your own domain
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## 🤝 Contributing
 
-## How can I deploy this project?
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-Simply open [Lovable](https://lovable.dev/projects/de042491-4dcd-416d-88d3-e51379625cdc) and click on Share -> Publish.
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## I want to use a custom domain - is that possible?
+## 📜 License
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 👨‍💻 Author
+
+Rafiki AI Team
+
+## 💬 Support
+
+For support, email support@rafiki-ai.com or create an issue in this repository.
