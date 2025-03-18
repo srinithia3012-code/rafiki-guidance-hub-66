@@ -105,6 +105,7 @@ serve(async (req) => {
     ];
 
     console.log("Calling Gemini API with API key:", GEMINI_API_KEY.substring(0, 5) + "...");
+    console.log("Request body:", JSON.stringify({ contents }, null, 2));
     
     // Call the Gemini API with the updated URL and model
     const response = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
@@ -143,6 +144,7 @@ serve(async (req) => {
 
     const data = await response.json();
     console.log("Gemini API response status:", response.status);
+    console.log("Gemini API response data:", JSON.stringify(data, null, 2));
     
     // Check if there was an error with the Gemini API
     if (data.error) {
