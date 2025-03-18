@@ -1,9 +1,8 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Chat, Brain, Heart, BookOpen, Bell, ArrowRight } from "lucide-react";
+import { MessageSquare, Brain, Heart, BookOpen, Bell, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import SelfAssessmentsSection from "@/components/career/SelfAssessmentsSection";
@@ -101,7 +100,7 @@ const Dashboard = () => {
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center">
-              <Chat className="mr-2 h-5 w-5 text-blue-500" />
+              <MessageSquare className="mr-2 h-5 w-5 text-blue-500" />
               AI Chat
             </CardTitle>
             <CardDescription>Get instant answers to your questions</CardDescription>
