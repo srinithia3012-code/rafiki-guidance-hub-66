@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from 'sonner';
 import { useEffect, useState } from "react";
@@ -11,6 +10,7 @@ import AuthCallback from "@/pages/AuthCallback";
 import Dashboard from "@/pages/Dashboard";
 import Assessments from "@/pages/Assessments";
 import AssessmentTaking from "@/pages/AssessmentTaking";
+import AssessmentResults from "@/pages/AssessmentResults";
 import Navbar from "@/components/Navbar";
 import { supabase } from "@/integrations/supabase/client";
 import "./App.css";
@@ -69,6 +69,7 @@ function App() {
             <Route path="/wellbeing" element={<WellbeingPage />} />
             <Route path="/assessments" element={<Assessments />} />
             <Route path="/assessments/:assessmentId" element={<AssessmentTaking />} />
+            <Route path="/assessment-results" element={<AssessmentResults />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

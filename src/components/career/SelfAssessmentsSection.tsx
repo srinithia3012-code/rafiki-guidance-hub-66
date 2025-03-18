@@ -1,9 +1,8 @@
-
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Brain, BarChart3, ArrowRight, Heart, Lightbulb } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Brain, BarChart3, ArrowRight, Heart, Lightbulb } from "lucide-react";
 
 const assessments = [
   {
@@ -71,12 +70,10 @@ const SelfAssessmentsSection = ({
   description,
   showAll = true
 }: SelfAssessmentsSectionProps) => {
-  // Filter assessments based on category if provided
   const filteredAssessments = filter 
     ? assessments.filter(assessment => assessment.category === filter)
     : assessments;
   
-  // Limit the number of displayed assessments if specified
   const displayedAssessments = filteredAssessments.slice(0, limit);
   
   const getIcon = () => {
@@ -99,11 +96,7 @@ const SelfAssessmentsSection = ({
       ? "Take these assessments to improve your academic performance"
       : "Take these assessments to help guide your career decisions";
 
-  const allAssessmentsLink = filter === "wellbeing" 
-    ? "/wellbeing/assessments" 
-    : filter === "academic"
-      ? "/academic/assessments"
-      : "/career/assessments";
+  const allAssessmentsLink = "/assessment-results";
 
   return (
     <Card className="mb-6">
