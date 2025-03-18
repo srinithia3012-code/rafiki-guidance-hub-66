@@ -9,6 +9,8 @@ import CareerPage from "@/pages/Career";
 import WellbeingPage from "@/pages/Wellbeing";
 import AuthCallback from "@/pages/AuthCallback";
 import Dashboard from "@/pages/Dashboard";
+import Assessments from "@/pages/Assessments";
+import AssessmentTaking from "@/pages/AssessmentTaking";
 import Navbar from "@/components/Navbar";
 import { supabase } from "@/integrations/supabase/client";
 import "./App.css";
@@ -65,6 +67,8 @@ function App() {
             <Route path="/chat" element={<ChatPage />} />
             <Route path="/career" element={<CareerPage />} />
             <Route path="/wellbeing" element={<WellbeingPage />} />
+            <Route path="/assessments" element={<Assessments />} />
+            <Route path="/assessments/:assessmentId" element={<AssessmentTaking />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
