@@ -3,7 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") || "AIzaSyA70s3cQXLM73NY1sQaMxdxdQDKNtkEgjs";
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
+const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -85,7 +85,7 @@ serve(async (req) => {
         systemPrompt += "Provide general guidance on university life, academics, career, and well-being.";
     }
 
-    // Format the chat history for Gemini
+    // Format the chat history for Gemini 2.0
     const formattedHistory = chatHistory?.map((msg: any) => ({
       role: msg.role === "user" ? "user" : "model",
       parts: [{ text: msg.content }],
@@ -106,7 +106,7 @@ serve(async (req) => {
 
     console.log("Calling Gemini API with API key:", GEMINI_API_KEY.substring(0, 5) + "...");
     
-    // Call the Gemini API
+    // Call the Gemini API with the updated URL and model
     const response = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
       method: "POST",
       headers: {
@@ -153,7 +153,7 @@ serve(async (req) => {
       });
     }
 
-    // Extract the AI's response text
+    // Extract the AI's response text from the new API response format
     const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "I'm sorry, I couldn't generate a response.";
     console.log("Successfully generated AI response");
 
