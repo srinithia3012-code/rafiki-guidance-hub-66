@@ -60,6 +60,7 @@ serve(async (req) => {
     console.log("Category:", category);
     console.log("Chat History Length:", chatHistory?.length || 0);
     
+    // Validate API key
     if (!GEMINI_API_KEY || GEMINI_API_KEY.trim() === "") {
       console.error("Missing GEMINI_API_KEY in environment variables");
       return new Response(
@@ -100,7 +101,7 @@ serve(async (req) => {
     }
 
     // Format the chat history for Gemini 2.0
-    const formattedHistory = chatHistory?.map((msg: any) => ({
+    const formattedHistory = chatHistory?.map((msg) => ({
       role: msg.role === "user" ? "user" : "model",
       parts: [{ text: msg.content }],
     })) || [];
@@ -118,7 +119,7 @@ serve(async (req) => {
       },
     ];
 
-    console.log("Calling Gemini API with API key:", GEMINI_API_KEY.substring(0, 5) + "...");
+    console.log("Calling Gemini API");
     
     try {
       // Call the Gemini API with the updated URL and model
@@ -168,13 +169,10 @@ serve(async (req) => {
       // Check if there was an error with the Gemini API
       if (data.error) {
         console.error("Gemini API error:", data.error);
-        return new Response(JSON.stringify({ error: "Failed to get response from AI", details: data.error }), {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        throw new Error(`Failed to get response from AI: ${JSON.stringify(data.error)}`);
       }
 
-      // Extract the AI's response text from the new API response format
+      // Extract the AI's response text from the API response format
       const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "I'm sorry, I couldn't generate a response.";
       console.log("Successfully generated AI response");
 
@@ -195,18 +193,26 @@ serve(async (req) => {
     } catch (geminiError) {
       console.error("Error calling Gemini API:", geminiError);
       
-      // Fallback to mock response if Gemini API fails
+      // Provide a more detailed fallback response with the error
       console.log("Using fallback response due to API error");
       const fallbackResponse = getFallbackResponse(category);
       
-      return new Response(JSON.stringify({ text: fallbackResponse }), {
+      return new Response(JSON.stringify({ 
+        text: fallbackResponse,
+        fallback: true,
+        error: geminiError.message 
+      }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
   } catch (error) {
     console.error("Error in gemini-chat function:", error);
-    return new Response(JSON.stringify({ error: "An unexpected error occurred", details: error.message }), {
+    return new Response(JSON.stringify({ 
+      error: "An unexpected error occurred", 
+      details: error.message,
+      text: "I'm having trouble connecting right now. Please check your internet connection and try again in a moment."
+    }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

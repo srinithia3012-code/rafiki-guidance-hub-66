@@ -16,6 +16,8 @@ export function useSendMessage(
 ) {
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRIES = 2;
 
   const handleSend = async () => {
     if (!inputValue.trim()) return;
@@ -70,9 +72,25 @@ export function useSendMessage(
       
       console.log("Received AI response:", response);
       
-      if (!response || (!response.text && !response.message)) {
-        throw new Error("Received empty response from AI service");
+      if (!response) {
+        throw new Error("Failed to get response from AI service");
       }
+      
+      if (response.error) {
+        console.error("Error from AI service:", response.error);
+        if (retryCount < MAX_RETRIES) {
+          // Increment retry count and try again
+          setRetryCount(prev => prev + 1);
+          toast.info("Trying to reconnect...");
+          throw new Error(`Error from AI service: ${response.error}`);
+        } else {
+          // Max retries reached, show fallback message
+          throw new Error(`Failed to connect after ${MAX_RETRIES} attempts`);
+        }
+      }
+      
+      // Reset retry count on success
+      setRetryCount(0);
       
       const responseText = response.text || response.message || "I'm sorry, I couldn't generate a response.";
       
@@ -82,6 +100,7 @@ export function useSendMessage(
         sender: "ai",
         timestamp: new Date(),
         category,
+        fallback: response.fallback,
       };
 
       setMessages((prev) => [...prev, aiMessage]);
@@ -95,13 +114,47 @@ export function useSendMessage(
           }
         );
       }
+      
+      // If using fallback response, show a subtle notification
+      if (response.fallback) {
+        toast.info("Using offline response mode due to connectivity issues", { 
+          duration: 3000,
+        });
+      }
     } catch (error) {
       console.error("Error sending message:", error);
-      toast.error("Failed to get a response. Please try again.");
+      
+      // Different error messages based on type of error
+      if (error.message?.includes("Failed to fetch") || error.message?.includes("connect")) {
+        toast.error("Network error. Please check your internet connection.");
+      } else if (error.message?.includes("API key")) {
+        toast.error("The AI service is not properly configured. Please contact support.");
+      } else if (retryCount >= MAX_RETRIES) {
+        toast.error("Failed to get a response after multiple attempts. Please try again later.");
+        
+        // Add error message to chat
+        const errorMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: "I'm sorry, I'm having trouble connecting right now. Please try again in a moment.",
+          sender: "ai",
+          timestamp: new Date(),
+          category,
+          error: true,
+        };
+        
+        setMessages((prev) => [...prev, errorMessage]);
+      } else {
+        toast.error("Failed to get a response. Please try again.");
+      }
     } finally {
       setIsLoading(false);
       if (inputRef.current) {
         inputRef.current.focus();
+      }
+      
+      // Reset retry count after showing error
+      if (retryCount >= MAX_RETRIES) {
+        setRetryCount(0);
       }
     }
   };

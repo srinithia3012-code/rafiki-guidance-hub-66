@@ -8,4 +8,6 @@ export interface Message {
   timestamp: Date;
   category?: GuidanceCategory;
   sentiment?: "positive" | "negative" | "neutral";
+  error?: boolean;
+  fallback?: boolean;
 }
