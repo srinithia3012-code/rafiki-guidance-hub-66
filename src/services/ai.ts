@@ -17,10 +17,14 @@ export const sendMessageToAI = async (
     return getMockResponse(message, category);
   } else {
     try {
+      console.log("Sending message to Gemini API via edge function:", { message, category });
+      
       // Call the Gemini AI API through our Supabase edge function
       const { data, error } = await supabase.functions.invoke("gemini-chat", {
         body: { message, category, chatHistory: history }
       });
+
+      console.log("Gemini API response:", data, "Error:", error);
 
       if (error) {
         console.error("Error calling Gemini AI:", error);

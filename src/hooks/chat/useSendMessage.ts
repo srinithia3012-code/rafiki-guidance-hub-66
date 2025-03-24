@@ -60,15 +60,25 @@ export function useSendMessage(
       }
 
       // Get response from AI
-      const response = await sendMessageToAI(
-        contextMessage ? `${contextMessage}\n\nUser message: ${inputValue}` : inputValue, 
-        category, 
-        chatHistory
-      );
+      const finalMessage = contextMessage ? 
+        `${contextMessage}\n\nUser message: ${inputValue}` : 
+        inputValue;
+        
+      console.log("Final message to send:", finalMessage);
+      
+      const response = await sendMessageToAI(finalMessage, category, chatHistory);
+      
+      console.log("Received AI response:", response);
+      
+      if (!response || (!response.text && !response.message)) {
+        throw new Error("Received empty response from AI service");
+      }
+      
+      const responseText = response.text || response.message || "I'm sorry, I couldn't generate a response.";
       
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: response.text,
+        content: responseText,
         sender: "ai",
         timestamp: new Date(),
         category,
