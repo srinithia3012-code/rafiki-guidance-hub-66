@@ -1,7 +1,7 @@
 
-# Rafiki AI - Student Guidance & Wellbeing Assistant
+# 🤖 Rafiki AI - Student Guidance & Wellbeing Assistant
 
-Rafiki AI is a comprehensive student support platform designed to provide personalized guidance, academic planning, career advice, and wellbeing resources for university students.
+Rafiki AI is a comprehensive student support platform designed to provide personalized guidance, academic planning, career advice, and wellbeing resources for university students. The name "Rafiki" - Swahili for "friend" - reflects our mission to be a friendly, supportive companion throughout your academic journey.
 
 ## 🌟 Features
 
