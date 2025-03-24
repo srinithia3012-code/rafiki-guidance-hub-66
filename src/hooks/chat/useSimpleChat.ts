@@ -1,31 +1,31 @@
 
-import { useState, useRef, useEffect } from "react";
+import { useRef, useState, useEffect } from "react";
 import { GuidanceCategory } from "@/services/ai";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Message } from "@/types/chat";
 import { getCategoryWelcomeMessage } from "@/utils/chatUtils";
+import { supabase } from "@/integrations/supabase/client";
 
 export function useSimpleChat(initialCategory: GuidanceCategory = "general") {
+  const [category, setCategory] = useState<GuidanceCategory>(initialCategory);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [category, setCategory] = useState<GuidanceCategory>(initialCategory);
   const [user, setUser] = useState<any>(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Check authentication state
+  // Check user authentication status
   useEffect(() => {
-    const checkUser = async () => {
+    const checkAuth = async () => {
       setIsCheckingAuth(true);
       try {
         const { data } = await supabase.auth.getSession();
         setUser(data.session?.user || null);
         
         const { data: authListener } = supabase.auth.onAuthStateChange(
-          (_, session) => {
+          (_event, session) => {
             setUser(session?.user || null);
           }
         );
@@ -35,20 +35,20 @@ export function useSimpleChat(initialCategory: GuidanceCategory = "general") {
         };
       } catch (error) {
         console.error("Error checking auth:", error);
-        toast.error("Error checking authentication status");
       } finally {
         setIsCheckingAuth(false);
       }
     };
     
-    checkUser();
+    checkAuth();
   }, []);
 
-  // Set welcome message
+  // Initialize with welcome message
   useEffect(() => {
+    const welcomeMessage = getCategoryWelcomeMessage(category);
     setMessages([{
       id: "welcome",
-      content: getCategoryWelcomeMessage(category),
+      content: welcomeMessage,
       sender: "ai",
       timestamp: new Date(),
       category,
@@ -63,12 +63,12 @@ export function useSimpleChat(initialCategory: GuidanceCategory = "general") {
   const handleSend = async () => {
     if (!inputValue.trim()) return;
     
-    // Check if user is authenticated
     if (!user) {
       toast.error("Please sign in to use the chat feature");
       return;
     }
-
+    
+    // Add user message to chat
     const userMessage: Message = {
       id: Date.now().toString(),
       content: inputValue,
@@ -76,54 +76,51 @@ export function useSimpleChat(initialCategory: GuidanceCategory = "general") {
       timestamp: new Date(),
       category,
     };
-
-    setMessages((prev) => [...prev, userMessage]);
+    
+    setMessages(prev => [...prev, userMessage]);
     setInputValue("");
     setIsLoading(true);
-
+    
     try {
-      // Simple direct API call
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          message: inputValue, 
-          category,
-          userId: user.id
-        }),
-        signal: AbortSignal.timeout(10000) // 10 second timeout
-      });
+      // Fetch response from static JSON file based on category
+      let url = "/api/chat.json";
+      if (category !== "general") {
+        url = `/api/chat-${category}.json`;
+      }
+      
+      const response = await fetch(url);
       
       if (!response.ok) {
-        throw new Error(`HTTP error: ${response.status}`);
+        throw new Error(`Failed to fetch response: ${response.status}`);
       }
       
       const data = await response.json();
       
+      // Create AI response
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: data.text || "I understand your message. How can I help further?",
+        content: data.text || "I'm here to help. What would you like to know?",
         sender: "ai",
         timestamp: new Date(),
         category,
       };
-
-      setMessages((prev) => [...prev, aiMessage]);
+      
+      setMessages(prev => [...prev, aiMessage]);
     } catch (error) {
-      console.error("Error sending message:", error);
+      console.error("Error getting chat response:", error);
       
       // Fallback response
       const fallbackMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: "I'm here to help with your questions about academics, career planning, or wellbeing. What would you like to discuss today?",
+        content: "I'm here to help with your questions. What would you like to know more about?",
         sender: "ai",
         timestamp: new Date(),
         category,
         fallback: true,
       };
       
-      setMessages((prev) => [...prev, fallbackMessage]);
-      toast.error("Using fallback responses due to connection issues");
+      setMessages(prev => [...prev, fallbackMessage]);
+      toast.error("Could not connect to the server. Using offline mode.");
     } finally {
       setIsLoading(false);
       if (inputRef.current) {
@@ -138,16 +135,18 @@ export function useSimpleChat(initialCategory: GuidanceCategory = "general") {
       handleSend();
     }
   };
-
+  
   const handleCategoryChange = (value: string) => {
     const newCategory = value as GuidanceCategory;
     setCategory(newCategory);
   };
-
+  
   const clearChat = () => {
+    // Reset to welcome message
+    const welcomeMessage = getCategoryWelcomeMessage(category);
     setMessages([{
       id: "welcome",
-      content: getCategoryWelcomeMessage(category),
+      content: welcomeMessage,
       sender: "ai",
       timestamp: new Date(),
       category,

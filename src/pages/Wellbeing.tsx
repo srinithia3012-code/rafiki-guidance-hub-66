@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from "react";
 import { Helmet } from "react-helmet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { supabase } from "@/integrations/supabase/client";
 import { getWellnessResources } from "@/services/ai";
 import AIWellbeingChat from "@/components/wellbeing/AIWellbeingChat";
 import SelfAssessmentsSection from "@/components/career/SelfAssessmentsSection";
@@ -12,43 +11,12 @@ import ResourcesTab from "@/components/wellbeing/tabs/ResourcesTab";
 import ProfessionalHelpTab from "@/components/wellbeing/tabs/ProfessionalHelpTab";
 import WellbeingCallToAction from "@/components/wellbeing/WellbeingCallToAction";
 import { toast } from "sonner";
+import { useAuthStatus } from "@/hooks/useAuthStatus";
 
 const WellbeingPage: React.FC = () => {
   const [moodRating, setMoodRating] = useState<number | null>(null);
   const [resources, setResources] = useState<any[]>([]);
-  const [user, setUser] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  
-  useEffect(() => {
-    const getUser = async () => {
-      try {
-        setIsLoading(true);
-        const { data, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error("Auth error:", error);
-          toast.error("There was a problem checking your login status");
-          return;
-        }
-        
-        setUser(data.session?.user || null);
-        
-        const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
-          setUser(session?.user || null);
-        });
-        
-        return () => {
-          authListener.subscription.unsubscribe();
-        };
-      } catch (error) {
-        console.error("Auth check error:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    getUser();
-  }, []);
+  const { user, isLoading } = useAuthStatus();
   
   useEffect(() => {
     if (moodRating !== null) {
