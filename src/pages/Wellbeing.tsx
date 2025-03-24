@@ -11,24 +11,40 @@ import MoodTracking from "@/components/wellbeing/MoodTracking";
 import ResourcesTab from "@/components/wellbeing/tabs/ResourcesTab";
 import ProfessionalHelpTab from "@/components/wellbeing/tabs/ProfessionalHelpTab";
 import WellbeingCallToAction from "@/components/wellbeing/WellbeingCallToAction";
+import { toast } from "sonner";
 
 const WellbeingPage: React.FC = () => {
   const [moodRating, setMoodRating] = useState<number | null>(null);
   const [resources, setResources] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   
   useEffect(() => {
     const getUser = async () => {
-      const { data } = await supabase.auth.getSession();
-      setUser(data.session?.user || null);
-      
-      const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
-        setUser(session?.user || null);
-      });
-      
-      return () => {
-        authListener.subscription.unsubscribe();
-      };
+      try {
+        setIsLoading(true);
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Auth error:", error);
+          toast.error("There was a problem checking your login status");
+          return;
+        }
+        
+        setUser(data.session?.user || null);
+        
+        const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
+          setUser(session?.user || null);
+        });
+        
+        return () => {
+          authListener.subscription.unsubscribe();
+        };
+      } catch (error) {
+        console.error("Auth check error:", error);
+      } finally {
+        setIsLoading(false);
+      }
     };
     
     getUser();
@@ -37,9 +53,26 @@ const WellbeingPage: React.FC = () => {
   useEffect(() => {
     if (moodRating !== null) {
       const fetchResources = async () => {
-        const sentiment = moodRating <= 2 ? "negative" : moodRating === 3 ? "neutral" : "positive";
-        const wellnessResources = await getWellnessResources(sentiment);
-        setResources(wellnessResources);
+        try {
+          const sentiment = moodRating <= 2 ? "negative" : moodRating === 3 ? "neutral" : "positive";
+          // Adding fallback resources if the API call fails
+          const defaultResources = [
+            { title: "Mindfulness Exercises", link: "#mindfulness" },
+            { title: "Stress Management", link: "#stress" },
+            { title: "Mental Health Support", link: "#support" }
+          ];
+          
+          try {
+            const wellnessResources = await getWellnessResources(sentiment);
+            setResources(wellnessResources.length > 0 ? wellnessResources : defaultResources);
+          } catch (error) {
+            console.error("Failed to fetch wellness resources:", error);
+            setResources(defaultResources);
+            toast.error("Could not load personalized resources. Showing defaults instead.");
+          }
+        } catch (error) {
+          console.error("Error in mood resources:", error);
+        }
       };
       
       fetchResources();
