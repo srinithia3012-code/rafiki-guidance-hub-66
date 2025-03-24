@@ -17,10 +17,12 @@ export function useSendMessage(
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [lastUserMessage, setLastUserMessage] = useState<Message | null>(null);
   const MAX_RETRIES = 2;
 
-  const handleSend = async () => {
-    if (!inputValue.trim()) return;
+  const processMessage = async (messageText: string, isRetry = false) => {
+    // Skip if empty message
+    if (!messageText.trim()) return;
     
     // Check if user is authenticated
     if (!user) {
@@ -28,16 +30,26 @@ export function useSendMessage(
       return;
     }
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      content: inputValue,
-      sender: "user",
-      timestamp: new Date(),
-      category,
-    };
+    // Create user message object
+    const userMessage: Message = isRetry && lastUserMessage 
+      ? lastUserMessage
+      : {
+          id: Date.now().toString(),
+          content: messageText,
+          sender: "user",
+          timestamp: new Date(),
+          category,
+        };
 
-    setMessages((prev) => [...prev, userMessage]);
-    setInputValue("");
+    // Store the last user message for potential retry
+    if (!isRetry) {
+      setLastUserMessage(userMessage);
+      // Add user message to chat
+      setMessages((prev) => [...prev, userMessage]);
+    }
+    
+    // Clear input and set loading state
+    if (!isRetry) setInputValue("");
     setIsLoading(true);
 
     try {
@@ -51,9 +63,11 @@ export function useSendMessage(
           content: msg.content
         }));
 
-      // Analyze sentiment of user message (optional)
-      const sentimentResult = await analyzeSentiment(inputValue);
-      userMessage.sentiment = sentimentResult.sentiment;
+      // Analyze sentiment of user message
+      const sentimentResult = await analyzeSentiment(messageText);
+      if (!isRetry) {
+        userMessage.sentiment = sentimentResult.sentiment;
+      }
 
       // Prepare additional context from assessment data
       let contextMessage = "";
@@ -63,8 +77,8 @@ export function useSendMessage(
 
       // Get response from AI
       const finalMessage = contextMessage ? 
-        `${contextMessage}\n\nUser message: ${inputValue}` : 
-        inputValue;
+        `${contextMessage}\n\nUser message: ${messageText}` : 
+        messageText;
         
       console.log("Final message to send:", finalMessage);
       
@@ -78,10 +92,13 @@ export function useSendMessage(
       
       if (response.error) {
         console.error("Error from AI service:", response.error);
-        if (retryCount < MAX_RETRIES) {
-          // Increment retry count and try again
-          setRetryCount(prev => prev + 1);
-          toast.info("Trying to reconnect...");
+        
+        if (isRetry || retryCount < MAX_RETRIES) {
+          // Increment retry count if this is not already a retry
+          if (!isRetry) {
+            setRetryCount(prev => prev + 1);
+            toast.info("Trying to reconnect...");
+          }
           throw new Error(`Error from AI service: ${response.error}`);
         } else {
           // Create message with error state
@@ -142,7 +159,7 @@ export function useSendMessage(
         toast.error("Network error. Please check your internet connection.");
       } else if (error.message?.includes("API key")) {
         toast.error("The AI service is not properly configured. Please contact support.");
-      } else if (retryCount >= MAX_RETRIES) {
+      } else if (isRetry || retryCount >= MAX_RETRIES) {
         toast.error("Failed to get a response after multiple attempts. Please try again later.");
         
         // Add error message to chat
@@ -170,6 +187,16 @@ export function useSendMessage(
     }
   };
 
+  const handleSend = async () => {
+    await processMessage(inputValue);
+  };
+
+  const retryLastMessage = async () => {
+    if (lastUserMessage) {
+      await processMessage(lastUserMessage.content, true);
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -182,6 +209,7 @@ export function useSendMessage(
     setInputValue,
     isLoading,
     handleSend,
-    handleKeyDown
+    handleKeyDown,
+    retryLastMessage
   };
 }

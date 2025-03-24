@@ -24,7 +24,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialCategory = "genera
     handleSend, 
     handleKeyDown, 
     handleCategoryChange, 
-    clearChat 
+    clearChat,
+    retryLastMessage 
   } = useChat(initialCategory);
 
   // If checking auth, show loading
@@ -82,7 +83,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialCategory = "genera
       <MessagesList 
         messages={messages} 
         isLoading={isLoading} 
-        messagesEndRef={messagesEndRef} 
+        messagesEndRef={messagesEndRef}
+        onRetry={retryLastMessage}
       />
       
       <MessageInput 

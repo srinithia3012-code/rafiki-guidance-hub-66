@@ -143,11 +143,11 @@ serve(async (req) => {
     console.log("Calling Gemini API");
     
     try {
-      // Set a timeout for the Gemini API call
+      // Create a controller for the timeout but without passing the signal to the fetch
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
       
-      // Call the Gemini API with the updated URL and model
+      // Call the Gemini API
       const response = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
         method: "POST",
         headers: {
@@ -180,10 +180,9 @@ serve(async (req) => {
             },
           ],
         }),
-        signal: controller.signal,
       });
       
-      clearTimeout(timeout);
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorText = await response.text();
