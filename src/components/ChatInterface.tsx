@@ -1,6 +1,6 @@
 
 import React from "react";
-import { useChat } from "@/hooks/chat/useChat";
+import { useSimpleChat } from "@/hooks/chat/useSimpleChat";
 import ChatHeader from "./chat/ChatHeader";
 import MessagesList from "./chat/MessagesList";
 import MessageInput from "./chat/MessageInput";
@@ -24,9 +24,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialCategory = "genera
     handleSend, 
     handleKeyDown, 
     handleCategoryChange, 
-    clearChat,
-    retryLastMessage 
-  } = useChat(initialCategory);
+    clearChat
+  } = useSimpleChat(initialCategory);
 
   // If checking auth, show loading
   if (isCheckingAuth) {
@@ -84,7 +83,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialCategory = "genera
         messages={messages} 
         isLoading={isLoading} 
         messagesEndRef={messagesEndRef}
-        onRetry={retryLastMessage}
       />
       
       <MessageInput 

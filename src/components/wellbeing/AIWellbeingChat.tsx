@@ -3,10 +3,10 @@ import React, { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Heart, Send, RefreshCw, Trash2 } from "lucide-react";
+import { Heart, Send, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useChat } from "@/hooks/chat/useChat";
+import { useSimpleChat } from "@/hooks/chat/useSimpleChat";
 import MessageItem from "@/components/chat/MessageItem";
 import TypingIndicator from "@/components/chat/TypingIndicator";
 
@@ -21,7 +21,7 @@ const AIWellbeingChat = ({ moodRating }: { moodRating?: number | null }) => {
     clearChat, 
     messagesEndRef,
     user
-  } = useChat("mental_health");
+  } = useSimpleChat("mental_health");
   
   const [initialMessageSent, setInitialMessageSent] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);

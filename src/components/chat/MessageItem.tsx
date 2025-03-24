@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Message } from "@/types/chat";
 import { GuidanceCategory } from "@/services/ai";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, RefreshCw } from "lucide-react";
+import { AlertCircle, RefreshCw, InfoIcon } from "lucide-react";
 
 interface MessageItemProps {
   message: Message;
@@ -74,8 +74,9 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onRetry }) => {
             <div className="flex items-start">
               <div className="flex-1">
                 {message.content}
-                <div className="text-xs mt-1 opacity-75">
-                  (Using offline response mode)
+                <div className="flex items-center mt-1 text-xs text-blue-600">
+                  <InfoIcon className="h-3 w-3 mr-1" /> 
+                  Using basic response mode
                 </div>
               </div>
             </div>
