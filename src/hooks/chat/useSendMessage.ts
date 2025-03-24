@@ -84,8 +84,21 @@ export function useSendMessage(
           toast.info("Trying to reconnect...");
           throw new Error(`Error from AI service: ${response.error}`);
         } else {
-          // Max retries reached, show fallback message
-          throw new Error(`Failed to connect after ${MAX_RETRIES} attempts`);
+          // Create message with error state
+          const errorMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            content: response.text || "I'm sorry, I'm having trouble connecting right now. Please try again in a moment.",
+            sender: "ai",
+            timestamp: new Date(),
+            category,
+            error: true,
+          };
+          
+          setMessages((prev) => [...prev, errorMessage]);
+          
+          toast.error("Failed to get a response after multiple attempts. Please try again later.");
+          setRetryCount(0); // Reset retry count
+          return;
         }
       }
       
@@ -125,7 +138,7 @@ export function useSendMessage(
       console.error("Error sending message:", error);
       
       // Different error messages based on type of error
-      if (error.message?.includes("Failed to fetch") || error.message?.includes("connect")) {
+      if (error.message?.includes("Failed to fetch") || error.message?.includes("NetworkError")) {
         toast.error("Network error. Please check your internet connection.");
       } else if (error.message?.includes("API key")) {
         toast.error("The AI service is not properly configured. Please contact support.");
@@ -143,6 +156,9 @@ export function useSendMessage(
         };
         
         setMessages((prev) => [...prev, errorMessage]);
+        
+        // Reset retry count
+        setRetryCount(0);
       } else {
         toast.error("Failed to get a response. Please try again.");
       }
@@ -150,11 +166,6 @@ export function useSendMessage(
       setIsLoading(false);
       if (inputRef.current) {
         inputRef.current.focus();
-      }
-      
-      // Reset retry count after showing error
-      if (retryCount >= MAX_RETRIES) {
-        setRetryCount(0);
       }
     }
   };

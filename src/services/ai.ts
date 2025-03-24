@@ -19,37 +19,44 @@ export const sendMessageToAI = async (
     try {
       console.log("Sending message to Gemini API via edge function:", { message, category });
       
-      // Timeout for the API call to prevent hanging if the service is down
+      // Create a controller for the timeout but don't use the signal directly
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
       
-      // Call the Gemini AI API through our Supabase edge function
-      const { data, error } = await supabase.functions.invoke("gemini-chat", {
-        body: { message, category, chatHistory: history },
-        signal: controller.signal,
-      });
-      
-      clearTimeout(timeoutId);
+      try {
+        // Call the Gemini AI API through our Supabase edge function
+        // Note: We don't pass the signal directly to supabase.functions.invoke
+        const { data, error } = await supabase.functions.invoke("gemini-chat", {
+          body: { message, category, chatHistory: history }
+        });
+        
+        clearTimeout(timeoutId);
+        
+        console.log("Gemini API response:", data, "Error:", error);
 
-      console.log("Gemini API response:", data, "Error:", error);
+        if (error) {
+          console.error("Error calling Gemini AI:", error);
+          throw new Error(`AI service error: ${error.message}`);
+        }
 
-      if (error) {
-        console.error("Error calling Gemini AI:", error);
-        throw new Error(`AI service error: ${error.message}`);
+        return data;
+      } catch (error) {
+        clearTimeout(timeoutId);
+        
+        // Check if this is an abort error (timeout)
+        if (error.name === 'AbortError' || controller.signal.aborted) {
+          console.error("Request timed out");
+          return { 
+            text: "I'm sorry, the request took too long to process. Please try again.", 
+            error: "Request timeout",
+            fallback: true
+          };
+        }
+        
+        throw error; // Re-throw for the outer catch block
       }
-
-      return data;
     } catch (error) {
       console.error("Failed to send message to AI:", error);
-      
-      // Check if this is an abort error (timeout)
-      if (error.name === 'AbortError') {
-        return { 
-          text: "I'm sorry, the request took too long to process. Please try again.", 
-          error: "Request timeout",
-          fallback: true
-        };
-      }
       
       // Check for network errors
       if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {

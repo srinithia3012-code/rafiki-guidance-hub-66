@@ -16,45 +16,65 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Create a Supabase client with the Auth context of the logged in user
-  const supabaseClient = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-    {
-      global: {
-        headers: { Authorization: req.headers.get("Authorization")! },
-      },
-    }
-  );
-
-  // Get the current user's session
-  const {
-    data: { session },
-  } = await supabaseClient.auth.getSession();
-
-  // If no session, return 401
-  if (!session) {
-    return new Response(
-      JSON.stringify({
-        error: "Unauthorized",
-      }),
-      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
-
-  // Only handle POST requests
-  if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "Method not allowed" }), {
-      status: 405,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-
   try {
     console.log("Received request in Gemini Edge Function");
     
+    // Create a Supabase client with the Auth context of the logged in user
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      {
+        global: {
+          headers: { Authorization: req.headers.get("Authorization")! },
+        },
+      }
+    );
+
+    // Get the current user's session
+    const {
+      data: { session },
+    } = await supabaseClient.auth.getSession();
+
+    // If no session, return 401
+    if (!session) {
+      console.error("No session found, unauthorized request");
+      return new Response(
+        JSON.stringify({
+          error: "Unauthorized",
+          text: "You need to be logged in to use this feature."
+        }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Only handle POST requests
+    if (req.method !== "POST") {
+      console.error("Method not allowed:", req.method);
+      return new Response(JSON.stringify({ 
+        error: "Method not allowed",
+        text: "Only POST requests are allowed." 
+      }), {
+        status: 405,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Parse the request body
-    const { message, category, chatHistory } = await req.json();
+    let requestData;
+    try {
+      requestData = await req.json();
+    } catch (error) {
+      console.error("Failed to parse request JSON:", error);
+      return new Response(JSON.stringify({ 
+        error: "Invalid request format",
+        text: "Please provide a valid JSON body." 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    
+    const { message, category, chatHistory } = requestData;
     
     console.log("Message:", message);
     console.log("Category:", category);
@@ -66,10 +86,11 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           error: "Configuration error", 
-          text: "The AI service is not properly configured. Please contact support." 
+          text: "The AI service is not properly configured. Please contact support.",
+          fallback: true
         }),
         { 
-          status: 500, 
+          status: 200,  // Return 200 but with error info so the UI can handle it
           headers: { ...corsHeaders, "Content-Type": "application/json" } 
         }
       );
@@ -122,6 +143,10 @@ serve(async (req) => {
     console.log("Calling Gemini API");
     
     try {
+      // Set a timeout for the Gemini API call
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
       // Call the Gemini API with the updated URL and model
       const response = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
         method: "POST",
@@ -155,7 +180,10 @@ serve(async (req) => {
             },
           ],
         }),
+        signal: controller.signal,
       });
+      
+      clearTimeout(timeout);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -193,6 +221,18 @@ serve(async (req) => {
     } catch (geminiError) {
       console.error("Error calling Gemini API:", geminiError);
       
+      // Check if this is a timeout/abort error
+      if (geminiError.name === "AbortError") {
+        return new Response(JSON.stringify({ 
+          text: "I'm sorry, the request took too long to process. Please try again later.",
+          fallback: true,
+          error: "Request timeout" 
+        }), {
+          status: 200, // Send as 200 so the UI can handle it gracefully
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      
       // Provide a more detailed fallback response with the error
       console.log("Using fallback response due to API error");
       const fallbackResponse = getFallbackResponse(category);
@@ -211,9 +251,10 @@ serve(async (req) => {
     return new Response(JSON.stringify({ 
       error: "An unexpected error occurred", 
       details: error.message,
-      text: "I'm having trouble connecting right now. Please check your internet connection and try again in a moment."
+      text: "I'm having trouble connecting right now. Please check your internet connection and try again in a moment.",
+      fallback: true
     }), {
-      status: 500,
+      status: 200, // Send as 200 so the UI can handle it gracefully
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
