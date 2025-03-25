@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, LayoutDashboard, FileText } from "lucide-react";
+import { LogOut, User, LayoutDashboard } from "lucide-react";
 import { signOut } from "@/services/supabase";
 import { toast } from "sonner";
 import { User as SupabaseUser } from "@supabase/supabase-js";
@@ -50,14 +50,6 @@ const NavbarUserMenu: React.FC<NavbarUserMenuProps> = ({ currentUser }) => {
             >
               <LayoutDashboard className="h-4 w-4" />
               Dashboard
-            </Link>
-            <Link
-              to="/assessments"
-              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              <FileText className="h-4 w-4" />
-              Assessments
             </Link>
             <button
               onClick={handleSignOut}

@@ -1,6 +1,6 @@
 
 import React from "react";
-import { useChat } from "@/hooks/chat/useChat";
+import { useChat } from "@/hooks/useChat";
 import ChatHeader from "./chat/ChatHeader";
 import MessagesList from "./chat/MessagesList";
 import MessageInput from "./chat/MessageInput";
