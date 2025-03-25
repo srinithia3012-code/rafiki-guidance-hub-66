@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Helmet } from "react-helmet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { supabase } from "@/integrations/supabase/client";
 import { getWellnessResources } from "@/services/ai";
 import AIWellbeingChat from "@/components/wellbeing/AIWellbeingChat";
 import SelfAssessmentsSection from "@/components/career/SelfAssessmentsSection";
@@ -10,64 +11,40 @@ import MoodTracking from "@/components/wellbeing/MoodTracking";
 import ResourcesTab from "@/components/wellbeing/tabs/ResourcesTab";
 import ProfessionalHelpTab from "@/components/wellbeing/tabs/ProfessionalHelpTab";
 import WellbeingCallToAction from "@/components/wellbeing/WellbeingCallToAction";
-import { toast } from "sonner";
-import { useAuthStatus } from "@/hooks/useAuthStatus";
-import AuthPrompt from "@/components/career/AuthPrompt";
-import { Skeleton } from "@/components/ui/skeleton";
 
 const WellbeingPage: React.FC = () => {
   const [moodRating, setMoodRating] = useState<number | null>(null);
   const [resources, setResources] = useState<any[]>([]);
-  const { user, isLoading, error } = useAuthStatus();
+  const [user, setUser] = useState<any>(null);
+  
+  useEffect(() => {
+    const getUser = async () => {
+      const { data } = await supabase.auth.getSession();
+      setUser(data.session?.user || null);
+      
+      const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
+        setUser(session?.user || null);
+      });
+      
+      return () => {
+        authListener.subscription.unsubscribe();
+      };
+    };
+    
+    getUser();
+  }, []);
   
   useEffect(() => {
     if (moodRating !== null) {
       const fetchResources = async () => {
-        try {
-          const sentiment = moodRating <= 2 ? "negative" : moodRating === 3 ? "neutral" : "positive";
-          // Adding fallback resources if the API call fails
-          const defaultResources = [
-            { title: "Mindfulness Exercises", link: "#mindfulness" },
-            { title: "Stress Management", link: "#stress" },
-            { title: "Mental Health Support", link: "#support" }
-          ];
-          
-          try {
-            const wellnessResources = await getWellnessResources(sentiment);
-            setResources(wellnessResources.length > 0 ? wellnessResources : defaultResources);
-          } catch (error) {
-            console.error("Failed to fetch wellness resources:", error);
-            setResources(defaultResources);
-            toast.error("Could not load personalized resources. Showing defaults instead.");
-          }
-        } catch (error) {
-          console.error("Error in mood resources:", error);
-        }
+        const sentiment = moodRating <= 2 ? "negative" : moodRating === 3 ? "neutral" : "positive";
+        const wellnessResources = await getWellnessResources(sentiment);
+        setResources(wellnessResources);
       };
       
       fetchResources();
     }
   }, [moodRating]);
-
-  // Show loading state while checking authentication
-  if (isLoading) {
-    return (
-      <div className="container mx-auto px-4 py-8 mt-16 md:mt-20">
-        <div className="max-w-5xl mx-auto">
-          <Skeleton className="h-10 w-2/3 mx-auto mb-4" />
-          <Skeleton className="h-6 w-full max-w-3xl mx-auto mb-10" />
-          <Skeleton className="h-64 w-full rounded-xl mb-8" />
-          <Skeleton className="h-48 w-full rounded-xl" />
-        </div>
-      </div>
-    );
-  }
-  
-  // Handle authentication error
-  if (error) {
-    toast.error("There was a problem checking your authentication status");
-    return <AuthPrompt />;
-  }
   
   return (
     <div className="container mx-auto px-4 py-8 mt-16 md:mt-20">

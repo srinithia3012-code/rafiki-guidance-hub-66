@@ -3,15 +3,14 @@ import React, { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Heart, Send, RefreshCw } from "lucide-react";
+import { Heart, Send, RefreshCw, Trash2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useSimpleChat } from "@/hooks/chat/useSimpleChat";
-import { useAuthStatus } from "@/hooks/useAuthStatus";
+import { useChat } from "@/hooks/chat/useChat";
 import MessageItem from "@/components/chat/MessageItem";
 import TypingIndicator from "@/components/chat/TypingIndicator";
 
 const AIWellbeingChat = ({ moodRating }: { moodRating?: number | null }) => {
-  const { user } = useAuthStatus();
   const { 
     messages, 
     inputValue, 
@@ -21,7 +20,8 @@ const AIWellbeingChat = ({ moodRating }: { moodRating?: number | null }) => {
     handleKeyDown, 
     clearChat, 
     messagesEndRef,
-  } = useSimpleChat("mental_health");
+    user
+  } = useChat("mental_health");
   
   const [initialMessageSent, setInitialMessageSent] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -72,7 +72,7 @@ const AIWellbeingChat = ({ moodRating }: { moodRating?: number | null }) => {
                 Our AI assistant can provide personalized emotional support and mental wellbeing guidance.
               </p>
               <Button asChild>
-                <a href="/signin">Sign In</a>
+                <a href="/auth">Sign In</a>
               </Button>
             </div>
           </div>

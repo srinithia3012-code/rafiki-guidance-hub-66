@@ -17,12 +17,10 @@ export function useSendMessage(
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
-  const [lastUserMessage, setLastUserMessage] = useState<Message | null>(null);
   const MAX_RETRIES = 2;
 
-  const processMessage = async (messageText: string, isRetry = false) => {
-    // Skip if empty message
-    if (!messageText.trim()) return;
+  const handleSend = async () => {
+    if (!inputValue.trim()) return;
     
     // Check if user is authenticated
     if (!user) {
@@ -30,26 +28,16 @@ export function useSendMessage(
       return;
     }
 
-    // Create user message object
-    const userMessage: Message = isRetry && lastUserMessage 
-      ? lastUserMessage
-      : {
-          id: Date.now().toString(),
-          content: messageText,
-          sender: "user",
-          timestamp: new Date(),
-          category,
-        };
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      content: inputValue,
+      sender: "user",
+      timestamp: new Date(),
+      category,
+    };
 
-    // Store the last user message for potential retry
-    if (!isRetry) {
-      setLastUserMessage(userMessage);
-      // Add user message to chat
-      setMessages((prev) => [...prev, userMessage]);
-    }
-    
-    // Clear input and set loading state
-    if (!isRetry) setInputValue("");
+    setMessages((prev) => [...prev, userMessage]);
+    setInputValue("");
     setIsLoading(true);
 
     try {
@@ -63,11 +51,9 @@ export function useSendMessage(
           content: msg.content
         }));
 
-      // Analyze sentiment of user message
-      const sentimentResult = await analyzeSentiment(messageText);
-      if (!isRetry) {
-        userMessage.sentiment = sentimentResult.sentiment;
-      }
+      // Analyze sentiment of user message (optional)
+      const sentimentResult = await analyzeSentiment(inputValue);
+      userMessage.sentiment = sentimentResult.sentiment;
 
       // Prepare additional context from assessment data
       let contextMessage = "";
@@ -77,8 +63,8 @@ export function useSendMessage(
 
       // Get response from AI
       const finalMessage = contextMessage ? 
-        `${contextMessage}\n\nUser message: ${messageText}` : 
-        messageText;
+        `${contextMessage}\n\nUser message: ${inputValue}` : 
+        inputValue;
         
       console.log("Final message to send:", finalMessage);
       
@@ -92,30 +78,14 @@ export function useSendMessage(
       
       if (response.error) {
         console.error("Error from AI service:", response.error);
-        
-        if (isRetry || retryCount < MAX_RETRIES) {
-          // Increment retry count if this is not already a retry
-          if (!isRetry) {
-            setRetryCount(prev => prev + 1);
-            toast.info("Trying to reconnect...");
-          }
+        if (retryCount < MAX_RETRIES) {
+          // Increment retry count and try again
+          setRetryCount(prev => prev + 1);
+          toast.info("Trying to reconnect...");
           throw new Error(`Error from AI service: ${response.error}`);
         } else {
-          // Create message with error state
-          const errorMessage: Message = {
-            id: (Date.now() + 1).toString(),
-            content: response.text || "I'm sorry, I'm having trouble connecting right now. Please try again in a moment.",
-            sender: "ai",
-            timestamp: new Date(),
-            category,
-            error: true,
-          };
-          
-          setMessages((prev) => [...prev, errorMessage]);
-          
-          toast.error("Failed to get a response after multiple attempts. Please try again later.");
-          setRetryCount(0); // Reset retry count
-          return;
+          // Max retries reached, show fallback message
+          throw new Error(`Failed to connect after ${MAX_RETRIES} attempts`);
         }
       }
       
@@ -155,11 +125,11 @@ export function useSendMessage(
       console.error("Error sending message:", error);
       
       // Different error messages based on type of error
-      if (error.message?.includes("Failed to fetch") || error.message?.includes("NetworkError")) {
+      if (error.message?.includes("Failed to fetch") || error.message?.includes("connect")) {
         toast.error("Network error. Please check your internet connection.");
       } else if (error.message?.includes("API key")) {
         toast.error("The AI service is not properly configured. Please contact support.");
-      } else if (isRetry || retryCount >= MAX_RETRIES) {
+      } else if (retryCount >= MAX_RETRIES) {
         toast.error("Failed to get a response after multiple attempts. Please try again later.");
         
         // Add error message to chat
@@ -173,9 +143,6 @@ export function useSendMessage(
         };
         
         setMessages((prev) => [...prev, errorMessage]);
-        
-        // Reset retry count
-        setRetryCount(0);
       } else {
         toast.error("Failed to get a response. Please try again.");
       }
@@ -184,16 +151,11 @@ export function useSendMessage(
       if (inputRef.current) {
         inputRef.current.focus();
       }
-    }
-  };
-
-  const handleSend = async () => {
-    await processMessage(inputValue);
-  };
-
-  const retryLastMessage = async () => {
-    if (lastUserMessage) {
-      await processMessage(lastUserMessage.content, true);
+      
+      // Reset retry count after showing error
+      if (retryCount >= MAX_RETRIES) {
+        setRetryCount(0);
+      }
     }
   };
 
@@ -209,7 +171,6 @@ export function useSendMessage(
     setInputValue,
     isLoading,
     handleSend,
-    handleKeyDown,
-    retryLastMessage
+    handleKeyDown
   };
 }
