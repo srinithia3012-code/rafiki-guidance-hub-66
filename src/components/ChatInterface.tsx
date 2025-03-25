@@ -1,24 +1,27 @@
 
 import React from "react";
 import { useSimpleChat } from "@/hooks/chat/useSimpleChat";
+import { useAuthStatus } from "@/hooks/useAuthStatus";
 import ChatHeader from "./chat/ChatHeader";
 import MessagesList from "./chat/MessagesList";
 import MessageInput from "./chat/MessageInput";
 import { GuidanceCategory } from "@/services/ai";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ChatInterfaceProps {
   initialCategory?: GuidanceCategory;
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialCategory = "general" }) => {
+  const { user, isLoading: authLoading } = useAuthStatus();
+  
   const { 
     messages, 
     inputValue, 
     setInputValue, 
     isLoading, 
     category, 
-    user, 
-    isCheckingAuth, 
     messagesEndRef, 
     inputRef, 
     handleSend, 
@@ -27,8 +30,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialCategory = "genera
     clearChat
   } = useSimpleChat(initialCategory);
 
-  // If checking auth, show loading
-  if (isCheckingAuth) {
+  // If checking auth in the outer component, we already handled it
+  if (authLoading) {
     return (
       <div className="flex flex-col h-[80vh] md:h-[70vh] rounded-lg overflow-hidden glass-card">
         <ChatHeader 
@@ -39,7 +42,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialCategory = "genera
         <div className="flex-1 flex items-center justify-center bg-white/80">
           <div className="text-center p-6">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rafiki-600 mx-auto mb-4"></div>
-            <h3 className="text-lg font-medium mb-2">Checking authentication status...</h3>
+            <h3 className="text-lg font-medium mb-2">Loading chat...</h3>
           </div>
         </div>
       </div>
@@ -65,6 +68,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialCategory = "genera
             </div>
             <h3 className="text-lg font-medium mb-2">Please sign in to use the chat feature</h3>
             <p className="text-gray-500 mb-4">Sign in to get personalized guidance from Rafiki AI</p>
+            <Button asChild>
+              <a href="/signin">Sign In</a>
+            </Button>
           </div>
         </div>
       </div>

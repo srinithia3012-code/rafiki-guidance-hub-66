@@ -4,44 +4,16 @@ import { GuidanceCategory } from "@/services/ai";
 import { toast } from "sonner";
 import { Message } from "@/types/chat";
 import { getCategoryWelcomeMessage } from "@/utils/chatUtils";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuthStatus } from "@/hooks/useAuthStatus";
 
 export function useSimpleChat(initialCategory: GuidanceCategory = "general") {
   const [category, setCategory] = useState<GuidanceCategory>(initialCategory);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [user, setUser] = useState<any>(null);
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const { user, isLoading: authLoading } = useAuthStatus();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  // Check user authentication status
-  useEffect(() => {
-    const checkAuth = async () => {
-      setIsCheckingAuth(true);
-      try {
-        const { data } = await supabase.auth.getSession();
-        setUser(data.session?.user || null);
-        
-        const { data: authListener } = supabase.auth.onAuthStateChange(
-          (_event, session) => {
-            setUser(session?.user || null);
-          }
-        );
-        
-        return () => {
-          authListener.subscription.unsubscribe();
-        };
-      } catch (error) {
-        console.error("Error checking auth:", error);
-      } finally {
-        setIsCheckingAuth(false);
-      }
-    };
-    
-    checkAuth();
-  }, []);
 
   // Initialize with welcome message
   useEffect(() => {
@@ -160,7 +132,7 @@ export function useSimpleChat(initialCategory: GuidanceCategory = "general") {
     isLoading,
     category,
     user,
-    isCheckingAuth,
+    isAuthChecking: authLoading,
     messagesEndRef,
     inputRef,
     handleSend,
