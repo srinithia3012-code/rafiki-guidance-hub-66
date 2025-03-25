@@ -13,43 +13,14 @@ import Assessments from "@/pages/Assessments";
 import AssessmentTaking from "@/pages/AssessmentTaking";
 import AssessmentResults from "@/pages/AssessmentResults";
 import Navbar from "@/components/Navbar";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuthStatus } from "@/hooks/useAuthStatus";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import "./App.css";
 
 function App() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { user, isLoading } = useAuthStatus();
 
-  useEffect(() => {
-    const checkUser = async () => {
-      const { data, error } = await supabase.auth.getSession();
-      
-      if (!error && data.session) {
-        setUser(data.session.user);
-      }
-      
-      setLoading(false);
-    };
-
-    checkUser();
-    
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (event === "SIGNED_IN" && session) {
-          setUser(session.user);
-        } else if (event === "SIGNED_OUT") {
-          setUser(null);
-        }
-      }
-    );
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-rafiki-600"></div>
@@ -66,7 +37,7 @@ function App() {
           <main className="flex-grow">
             <Routes>
               <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <Index />} />
-              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/" replace />} />
               <Route path="/chat" element={<ChatPage />} />
               <Route path="/career" element={<CareerPage />} />
               <Route path="/wellbeing" element={<WellbeingPage />} />

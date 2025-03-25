@@ -1,7 +1,7 @@
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuthStatus } from "@/hooks/useAuthStatus";
 import { toast } from "sonner";
 import AuthPrompt from "@/components/career/AuthPrompt";
 import QuickAccessSection from "@/components/dashboard/QuickAccessSection";
@@ -11,9 +11,8 @@ import RecommendedResourcesSection from "@/components/dashboard/RecommendedResou
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [notifications, setNotifications] = useState([
+  const { user, isLoading } = useAuthStatus();
+  const [notifications, setNotifications] = React.useState([
     {
       id: 1,
       title: "New career assessment available",
@@ -30,43 +29,6 @@ const Dashboard = () => {
     }
   ]);
 
-  useEffect(() => {
-    const checkUser = async () => {
-      const { data, error } = await supabase.auth.getSession();
-      
-      if (error) {
-        console.error("Error checking authentication:", error);
-        toast.error("Authentication error. Please sign in again.");
-        navigate("/");
-        return;
-      }
-      
-      if (!data.session) {
-        navigate("/");
-        return;
-      }
-      
-      setUser(data.session.user);
-      setLoading(false);
-    };
-
-    checkUser();
-    
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (event === "SIGNED_OUT") {
-          navigate("/");
-        } else if (session) {
-          setUser(session.user);
-        }
-      }
-    );
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, [navigate]);
-
   const markAsRead = (id) => {
     setNotifications(prevNotifications => 
       prevNotifications.map(notification => 
@@ -75,7 +37,7 @@ const Dashboard = () => {
     );
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8 flex items-center justify-center min-h-[60vh]">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-rafiki-600"></div>
