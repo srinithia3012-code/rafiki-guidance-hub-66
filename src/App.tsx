@@ -36,8 +36,9 @@ function App() {
           <Navbar />
           <main className="flex-grow">
             <Routes>
+              {/* If logged in, redirect to dashboard from homepage */}
               <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <Index />} />
-              <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/" replace />} />
+              <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/chat" element={<ChatPage />} />
               <Route path="/career" element={<CareerPage />} />
               <Route path="/wellbeing" element={<WellbeingPage />} />

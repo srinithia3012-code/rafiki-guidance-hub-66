@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { User as SupabaseUser } from "@supabase/supabase-js";
@@ -30,6 +29,7 @@ const NavLinks: React.FC<NavLinksProps> = ({ currentUser }) => {
   ];
 
   const visibleLinks = links.filter(link => {
+    if (currentUser && link.name === "Home") return false;
     if (link.showAlways) return true;
     return currentUser ? link.showWhenLoggedIn : !link.showWhenLoggedIn;
   });
