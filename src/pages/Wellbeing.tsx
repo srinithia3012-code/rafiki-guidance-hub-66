@@ -12,11 +12,13 @@ import ProfessionalHelpTab from "@/components/wellbeing/tabs/ProfessionalHelpTab
 import WellbeingCallToAction from "@/components/wellbeing/WellbeingCallToAction";
 import { toast } from "sonner";
 import { useAuthStatus } from "@/hooks/useAuthStatus";
+import AuthPrompt from "@/components/career/AuthPrompt";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const WellbeingPage: React.FC = () => {
   const [moodRating, setMoodRating] = useState<number | null>(null);
   const [resources, setResources] = useState<any[]>([]);
-  const { user, isLoading } = useAuthStatus();
+  const { user, isLoading, error } = useAuthStatus();
   
   useEffect(() => {
     if (moodRating !== null) {
@@ -46,6 +48,26 @@ const WellbeingPage: React.FC = () => {
       fetchResources();
     }
   }, [moodRating]);
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8 mt-16 md:mt-20">
+        <div className="max-w-5xl mx-auto">
+          <Skeleton className="h-10 w-2/3 mx-auto mb-4" />
+          <Skeleton className="h-6 w-full max-w-3xl mx-auto mb-10" />
+          <Skeleton className="h-64 w-full rounded-xl mb-8" />
+          <Skeleton className="h-48 w-full rounded-xl" />
+        </div>
+      </div>
+    );
+  }
+  
+  // Handle authentication error
+  if (error) {
+    toast.error("There was a problem checking your authentication status");
+    return <AuthPrompt />;
+  }
   
   return (
     <div className="container mx-auto px-4 py-8 mt-16 md:mt-20">

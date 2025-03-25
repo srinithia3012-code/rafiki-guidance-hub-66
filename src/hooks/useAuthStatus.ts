@@ -13,7 +13,14 @@ export function useAuthStatus() {
     const checkUser = async () => {
       setIsLoading(true);
       try {
-        // Get current session
+        // Set up auth state listener FIRST
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          (_event, session) => {
+            setUser(session?.user || null);
+          }
+        );
+        
+        // THEN check for existing session
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -22,15 +29,8 @@ export function useAuthStatus() {
         
         setUser(data.session?.user || null);
         
-        // Subscribe to auth changes
-        const { data: authListener } = supabase.auth.onAuthStateChange(
-          (_event, session) => {
-            setUser(session?.user || null);
-          }
-        );
-        
         return () => {
-          authListener.subscription.unsubscribe();
+          subscription.unsubscribe();
         };
       } catch (err: any) {
         console.error("Auth check error:", err);
