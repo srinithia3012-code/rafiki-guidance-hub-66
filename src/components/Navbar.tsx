@@ -4,7 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { toast } from "sonner";
 import AuthModal from "./AuthModal";
-import { Logo, NavLinks, NavbarUserMenu, MobileMenu } from "./navbar";
+import Logo from "./navbar/Logo";
+import NavLinks from "./navbar/NavLinks";
+import NavbarUserMenu from "./navbar/NavbarUserMenu";
+import MobileMenu from "./navbar/MobileMenu";
+//import { Logo, NavLinks, NavbarUserMenu, MobileMenu } from "./navbar";
 import { onAuthChange, signOut, User as SupabaseUser } from "@/services/supabase";
 
 const Navbar: React.FC = () => {
