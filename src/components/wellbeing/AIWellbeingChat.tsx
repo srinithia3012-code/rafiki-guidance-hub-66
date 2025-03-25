@@ -4,13 +4,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Heart, Send, RefreshCw } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useChat } from "@/hooks/useChat";
+import { useSimpleChat } from "@/hooks/chat/useSimpleChat";
+import { useAuthStatus } from "@/hooks/useAuthStatus";
 import MessageItem from "@/components/chat/MessageItem";
 import TypingIndicator from "@/components/chat/TypingIndicator";
 
 const AIWellbeingChat = ({ moodRating }: { moodRating?: number | null }) => {
+  const { user } = useAuthStatus();
   const { 
     messages, 
     inputValue, 
@@ -20,8 +21,7 @@ const AIWellbeingChat = ({ moodRating }: { moodRating?: number | null }) => {
     handleKeyDown, 
     clearChat, 
     messagesEndRef,
-    user
-  } = useChat("mental_health");
+  } = useSimpleChat("mental_health");
   
   const [initialMessageSent, setInitialMessageSent] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -50,9 +50,9 @@ const AIWellbeingChat = ({ moodRating }: { moodRating?: number | null }) => {
   }, [moodRating, user, initialMessageSent]);
 
   return (
-    <Card className="mb-6 h-[500px] flex flex-col">
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center">
+    <Card className="mb-6 h-[500px] flex flex-col shadow-lg">
+      <CardHeader className="pb-2 border-b">
+        <CardTitle className="flex items-center text-lg">
           <Heart className="mr-2 h-5 w-5 text-rose-500" />
           AI Wellbeing Support
         </CardTitle>
@@ -60,7 +60,7 @@ const AIWellbeingChat = ({ moodRating }: { moodRating?: number | null }) => {
           Talk with Rafiki AI about your mental health and wellbeing
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col flex-1 overflow-hidden">
+      <CardContent className="flex flex-col flex-1 overflow-hidden p-0">
         {!user ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center p-6 max-w-md mx-auto">
@@ -72,43 +72,89 @@ const AIWellbeingChat = ({ moodRating }: { moodRating?: number | null }) => {
                 Our AI assistant can provide personalized emotional support and mental wellbeing guidance.
               </p>
               <Button asChild>
-                <a href="/auth">Sign In</a>
+                <a href="/signin">Sign In</a>
               </Button>
             </div>
           </div>
         ) : (
           <>
-            <div className="flex-1 overflow-y-auto mb-4 px-1">
+            <div className="flex-1 overflow-y-auto px-4 py-4">
               {messages.map((message) => (
-                <MessageItem key={message.id} message={message} />
+                <div key={message.id} className={`mb-4 flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[80%] rounded-lg p-3 ${
+                    message.sender === 'user' 
+                      ? 'bg-primary text-white rounded-tr-none' 
+                      : 'bg-gray-100 rounded-tl-none'
+                  }`}>
+                    {message.sender === 'ai' && (
+                      <div className="flex items-center mb-1">
+                        <Heart className="h-4 w-4 text-rose-500 mr-1" />
+                        <span className="text-xs font-medium text-rose-500">Rafiki</span>
+                        <span className="text-xs text-gray-500 ml-2">
+                          {new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        </span>
+                      </div>
+                    )}
+                    <div className={`text-sm ${message.sender === 'user' ? 'text-white' : 'text-gray-800'}`}>
+                      {message.content}
+                    </div>
+                    {message.sender === 'user' && (
+                      <div className="flex justify-end mt-1">
+                        <span className="text-xs text-white/70">
+                          {new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
               ))}
-              {isLoading && <TypingIndicator />}
+              {isLoading && (
+                <div className="flex justify-start mb-4">
+                  <div className="bg-gray-100 rounded-lg rounded-tl-none p-3 max-w-[80%]">
+                    <div className="flex items-center mb-1">
+                      <Heart className="h-4 w-4 text-rose-500 mr-1" />
+                      <span className="text-xs font-medium text-rose-500">Rafiki</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    </div>
+                  </div>
+                </div>
+              )}
               <div ref={messagesEndRef} />
             </div>
-            <div className="flex gap-2 mt-auto">
-              <Input
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Type your message..."
-                className="flex-1"
-                ref={inputRef}
-              />
-              <Button 
-                onClick={handleSend} 
-                disabled={isLoading || !inputValue.trim()}
-                size="icon"
-              >
-                <Send className="h-4 w-4" />
-              </Button>
-              <Button 
-                onClick={clearChat} 
-                variant="outline" 
-                size="icon" 
-                title="Start over"
-              >
-                <RefreshCw className="h-4 w-4" />
-              </Button>
+            <div className="p-3 border-t">
+              <div className="flex gap-2">
+                <Input
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Type your message..."
+                  className="flex-1"
+                  ref={inputRef}
+                />
+                <Button 
+                  onClick={handleSend} 
+                  disabled={isLoading || !inputValue.trim()}
+                  size="icon"
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+                <Button 
+                  onClick={clearChat} 
+                  variant="outline" 
+                  size="icon" 
+                  title="Start over"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="mt-2 text-xs text-gray-500 text-center">
+                Rafiki provides general guidance. For serious concerns, please contact professional services.
+              </div>
             </div>
           </>
         )}

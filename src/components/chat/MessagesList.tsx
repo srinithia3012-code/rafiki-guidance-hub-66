@@ -9,12 +9,14 @@ interface MessagesListProps {
   messages: Message[];
   isLoading: boolean;
   messagesEndRef: React.RefObject<HTMLDivElement>;
+  onRetry?: () => void;
 }
 
 const MessagesList: React.FC<MessagesListProps> = ({ 
   messages, 
   isLoading, 
-  messagesEndRef 
+  messagesEndRef,
+  onRetry
 }) => {
   // Automatically scroll to the bottom when new messages arrive
   useEffect(() => {
@@ -32,7 +34,11 @@ const MessagesList: React.FC<MessagesListProps> = ({
           </div>
         ) : (
           messages.map((message) => (
-            <MessageItem key={message.id} message={message} />
+            <MessageItem 
+              key={message.id} 
+              message={message}
+              onRetry={message.error ? onRetry : undefined} 
+            />
           ))
         )}
         

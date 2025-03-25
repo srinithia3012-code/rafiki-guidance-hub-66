@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Message } from "@/types/chat";
 import { getCategoryWelcomeMessage } from "@/utils/chatUtils";
 import { User } from "@supabase/supabase-js";
+import { getLatestAssessmentByType } from "@/services/assessment";
 
 export function useChat(initialCategory: GuidanceCategory = "general") {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -16,6 +17,7 @@ export function useChat(initialCategory: GuidanceCategory = "general") {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [assessmentData, setAssessmentData] = useState<any>(null);
 
   // Check authentication state
   useEffect(() => {
@@ -48,17 +50,61 @@ export function useChat(initialCategory: GuidanceCategory = "general") {
     checkUser();
   }, []);
 
-  // Welcome message
+  // Load assessment data when user and category change
   useEffect(() => {
-    const welcomeMessage: Message = {
+    const loadAssessmentData = async () => {
+      if (!user) return;
+      
+      try {
+        // Map guidance category to assessment type
+        let assessmentType = "";
+        if (category === "career") {
+          assessmentType = "career";
+        } else if (category === "mental_health" || category === "stress_management") {
+          assessmentType = "wellbeing";
+        } else if (category === "academic") {
+          assessmentType = "academic";
+        }
+        
+        if (assessmentType) {
+          const result = await getLatestAssessmentByType(user.id, assessmentType);
+          if (result) {
+            console.log(`Found assessment data for ${assessmentType}:`, result);
+            setAssessmentData(result);
+          } else {
+            console.log(`No assessment data found for ${assessmentType}`);
+            setAssessmentData(null);
+          }
+        }
+      } catch (error) {
+        console.error("Error loading assessment data:", error);
+      }
+    };
+    
+    loadAssessmentData();
+  }, [user, category]);
+
+  // Welcome message with assessment data
+  useEffect(() => {
+    // Create base welcome message
+    let welcomeMessage = getCategoryWelcomeMessage(category);
+    
+    // Add assessment data context if available
+    if (assessmentData) {
+      const assessmentInfo = getAssessmentSummary(assessmentData);
+      if (assessmentInfo) {
+        welcomeMessage += `\n\nI can see you've completed the ${getAssessmentTitle(assessmentData.assessment_id)} recently. ${assessmentInfo}`;
+      }
+    }
+    
+    setMessages([{
       id: "welcome",
-      content: getCategoryWelcomeMessage(category),
+      content: welcomeMessage,
       sender: "ai",
       timestamp: new Date(),
       category,
-    };
-    setMessages([welcomeMessage]);
-  }, [category]);
+    }]);
+  }, [category, assessmentData]);
 
   // Auto scroll to bottom of messages
   useEffect(() => {
@@ -105,8 +151,18 @@ export function useChat(initialCategory: GuidanceCategory = "general") {
       const sentimentResult = await analyzeSentiment(inputValue);
       userMessage.sentiment = sentimentResult.sentiment;
 
+      // Prepare additional context from assessment data
+      let contextMessage = "";
+      if (assessmentData && assessmentData.score) {
+        contextMessage = getAssessmentPromptContext(assessmentData);
+      }
+
       // Get response from AI
-      const response = await sendMessageToAI(inputValue, category, chatHistory);
+      const response = await sendMessageToAI(
+        contextMessage ? `${contextMessage}\n\nUser message: ${inputValue}` : inputValue, 
+        category, 
+        chatHistory
+      );
       
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -138,6 +194,70 @@ export function useChat(initialCategory: GuidanceCategory = "general") {
     }
   };
 
+  // Helper function to generate assessment context for AI prompt
+  const getAssessmentPromptContext = (assessment: any) => {
+    if (!assessment || !assessment.score) return "";
+    
+    let contextString = `The user has completed the ${getAssessmentTitle(assessment.assessment_id)} assessment. Here are their results:\n\n`;
+    
+    if (assessment.assessment_id === "career-personality") {
+      contextString += "Career Personality Assessment Results:\n";
+    } else if (assessment.assessment_id === "skills-assessment") {
+      contextString += "Skills Assessment Results:\n";
+    } else if (assessment.assessment_id === "interest-inventory") {
+      contextString += "Interest Inventory Results:\n";
+    } else if (assessment.assessment_id === "mental-wellbeing") {
+      contextString += "Mental Wellbeing Assessment Results:\n";
+    }
+    
+    // Add score data
+    Object.entries(assessment.score).forEach(([key, value]) => {
+      const formattedKey = key.split("_").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
+      contextString += `- ${formattedKey}: ${value}%\n`;
+    });
+    
+    contextString += "\nPlease use this assessment data to provide personalized guidance to the user. Do not explicitly mention that you are using their assessment data unless they ask about it.";
+    
+    return contextString;
+  };
+
+  // Helper function to get a summary of assessment results
+  const getAssessmentSummary = (assessment: any) => {
+    if (!assessment || !assessment.score) return "";
+    
+    if (assessment.assessment_id === "career-personality") {
+      return "Based on your results, I can provide personalized career guidance aligned with your personality traits.";
+    } else if (assessment.assessment_id === "skills-assessment") {
+      return "I can offer tailored advice on developing your skills further and how to leverage your strengths.";
+    } else if (assessment.assessment_id === "interest-inventory") {
+      return "I can suggest career paths and opportunities that align with your interests and passions.";
+    } else if (assessment.assessment_id === "mental-wellbeing") {
+      return "I can provide personalized wellbeing support based on your assessment results.";
+    }
+    
+    return "I can provide personalized guidance based on your assessment results.";
+  };
+
+  // Helper function to get assessment title
+  const getAssessmentTitle = (assessmentId: string) => {
+    switch (assessmentId) {
+      case "career-personality":
+        return "Career Personality Assessment";
+      case "skills-assessment":
+        return "Skills Assessment";
+      case "interest-inventory":
+        return "Interest Inventory";
+      case "mental-wellbeing":
+        return "Mental Wellbeing Check";
+      case "anxiety-screening":
+        return "Anxiety Screening";
+      case "learning-style":
+        return "Learning Style Assessment";
+      default:
+        return assessmentId;
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -148,28 +268,26 @@ export function useChat(initialCategory: GuidanceCategory = "general") {
   const handleCategoryChange = (value: string) => {
     const newCategory = value as GuidanceCategory;
     setCategory(newCategory);
-    // Reset chat with new welcome message
-    setMessages([
-      {
-        id: "welcome",
-        content: getCategoryWelcomeMessage(newCategory),
-        sender: "ai",
-        timestamp: new Date(),
-        category: newCategory,
-      },
-    ]);
   };
 
   const clearChat = () => {
-    setMessages([
-      {
-        id: "welcome",
-        content: getCategoryWelcomeMessage(category),
-        sender: "ai",
-        timestamp: new Date(),
-        category,
-      },
-    ]);
+    // Create welcome message with assessment data if available
+    let welcomeMessage = getCategoryWelcomeMessage(category);
+    
+    if (assessmentData) {
+      const assessmentInfo = getAssessmentSummary(assessmentData);
+      if (assessmentInfo) {
+        welcomeMessage += `\n\nI can see you've completed the ${getAssessmentTitle(assessmentData.assessment_id)} recently. ${assessmentInfo}`;
+      }
+    }
+    
+    setMessages([{
+      id: "welcome",
+      content: welcomeMessage,
+      sender: "ai",
+      timestamp: new Date(),
+      category,
+    }]);
   };
 
   return {
@@ -186,5 +304,6 @@ export function useChat(initialCategory: GuidanceCategory = "general") {
     handleKeyDown,
     handleCategoryChange,
     clearChat,
+    assessmentData,
   };
 }
