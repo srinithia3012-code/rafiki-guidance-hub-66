@@ -47,6 +47,7 @@ const NavLinks: React.FC<NavLinksProps> = ({ currentUser }) => {
         </Link>
       ))}
 
+      {/* Only show sign in/out button - no duplicate */}
       {currentUser ? (
         <Button 
           variant="outline" 
