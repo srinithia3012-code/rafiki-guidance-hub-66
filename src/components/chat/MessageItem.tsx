@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Bot, Check, CircleHelp, User, AlertTriangle, Wifi, WifiOff } from "lucide-react";
+import { Bot, Check, CircleHelp, User } from "lucide-react";
 import { Message } from "@/types/chat";
 
 interface MessageItemProps {
@@ -25,11 +25,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message }) => {
         <div
           className={`rounded-2xl p-3 md:p-4 ${
             isAI
-              ? message.error 
-                ? "bg-red-50 text-gray-800 rounded-tl-none border border-red-100" 
-                : message.fallback
-                ? "bg-amber-50 text-gray-800 rounded-tl-none border border-amber-100"
-                : "bg-gray-100 text-gray-800 rounded-tl-none"
+              ? "bg-gray-100 text-gray-800 rounded-tl-none"
               : "bg-rafiki-600 text-white rounded-tr-none"
           }`}
         >
@@ -38,22 +34,6 @@ const MessageItem: React.FC<MessageItemProps> = ({ message }) => {
             <span className="text-xs opacity-60">
               {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
             </span>
-            {isAI && message.fallback && (
-              <div className="ml-1.5">
-                <div className="bg-amber-100 text-amber-800 text-xs rounded-full px-1.5 py-0.5 flex items-center">
-                  <WifiOff className="h-3 w-3 inline-block mr-1" />
-                  <span className="text-[10px]">Offline Mode</span>
-                </div>
-              </div>
-            )}
-            {isAI && message.error && (
-              <div className="ml-1.5">
-                <div className="bg-red-100 text-red-800 text-xs rounded-full px-1.5 py-0.5 flex items-center">
-                  <AlertTriangle className="h-3 w-3 inline-block mr-1" />
-                  <span className="text-[10px]">Error</span>
-                </div>
-              </div>
-            )}
             {!isAI && message.sentiment && (
               <div className="ml-1.5">
                 {message.sentiment === "positive" && (

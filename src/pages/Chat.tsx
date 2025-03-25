@@ -8,7 +8,6 @@ const ChatPage: React.FC = () => {
     <div className="container mx-auto px-3 md:px-4 py-4 md:py-8 mt-16 md:mt-20">
       <Helmet>
         <title>Chat with Rafiki AI | Your AI Guidance Counselor</title>
-        <meta name="description" content="Get personalized guidance and support from Rafiki AI, your virtual guidance counselor." />
       </Helmet>
       
       <h1 className="text-2xl md:text-3xl font-semibold mb-3 md:mb-6 text-center">Chat with Rafiki</h1>

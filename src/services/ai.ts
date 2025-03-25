@@ -17,21 +17,10 @@ export const sendMessageToAI = async (
     return getMockResponse(message, category);
   } else {
     try {
-      console.log("Sending message to Gemini API via edge function:", { message, category });
-      
-      // Timeout for the API call to prevent hanging if the service is down
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
-      
       // Call the Gemini AI API through our Supabase edge function
       const { data, error } = await supabase.functions.invoke("gemini-chat", {
-        body: { message, category, chatHistory: history },
-        signal: controller.signal,
+        body: { message, category, chatHistory: history }
       });
-      
-      clearTimeout(timeoutId);
-
-      console.log("Gemini API response:", data, "Error:", error);
 
       if (error) {
         console.error("Error calling Gemini AI:", error);
@@ -41,30 +30,8 @@ export const sendMessageToAI = async (
       return data;
     } catch (error) {
       console.error("Failed to send message to AI:", error);
-      
-      // Check if this is an abort error (timeout)
-      if (error.name === 'AbortError') {
-        return { 
-          text: "I'm sorry, the request took too long to process. Please try again.", 
-          error: "Request timeout",
-          fallback: true
-        };
-      }
-      
-      // Check for network errors
-      if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
-        return { 
-          text: "I'm having trouble connecting right now. Please check your internet connection and try again.", 
-          error: "Network error",
-          fallback: true
-        };
-      }
-      
-      // For other errors, provide a generic fallback
       return { 
-        text: "I'm sorry, I'm having trouble connecting right now. Please try again in a moment.", 
-        error: error.message,
-        fallback: true
+        text: "I'm sorry, I'm having trouble connecting right now. Please try again in a moment." 
       };
     }
   }

@@ -2,7 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") || "";
+const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") || "AIzaSyA70s3cQXLM73NY1sQaMxdxdQDKNtkEgjs";
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
 
 const corsHeaders = {
@@ -59,21 +59,6 @@ serve(async (req) => {
     console.log("Message:", message);
     console.log("Category:", category);
     console.log("Chat History Length:", chatHistory?.length || 0);
-    
-    // Validate API key
-    if (!GEMINI_API_KEY || GEMINI_API_KEY.trim() === "") {
-      console.error("Missing GEMINI_API_KEY in environment variables");
-      return new Response(
-        JSON.stringify({ 
-          error: "Configuration error", 
-          text: "The AI service is not properly configured. Please contact support." 
-        }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, "Content-Type": "application/json" } 
-        }
-      );
-    }
 
     // Build the prompt for Gemini based on the category
     let systemPrompt = "You are Rafiki, a helpful AI guidance counselor for university students. ";
@@ -101,7 +86,7 @@ serve(async (req) => {
     }
 
     // Format the chat history for Gemini 2.0
-    const formattedHistory = chatHistory?.map((msg) => ({
+    const formattedHistory = chatHistory?.map((msg: any) => ({
       role: msg.role === "user" ? "user" : "model",
       parts: [{ text: msg.content }],
     })) || [];
@@ -119,118 +104,89 @@ serve(async (req) => {
       },
     ];
 
-    console.log("Calling Gemini API");
+    console.log("Calling Gemini API with API key:", GEMINI_API_KEY.substring(0, 5) + "...");
+    console.log("Request body:", JSON.stringify({ contents }, null, 2));
     
-    try {
-      // Call the Gemini API with the updated URL and model
-      const response = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+    // Call the Gemini API with the updated URL and model
+    const response = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        contents,
+        generationConfig: {
+          temperature: 0.7,
+          topP: 0.8,
+          topK: 40,
+          maxOutputTokens: 1024,
         },
-        body: JSON.stringify({
-          contents,
-          generationConfig: {
-            temperature: 0.7,
-            topP: 0.8,
-            topK: 40,
-            maxOutputTokens: 1024,
+        safetySettings: [
+          {
+            category: "HARM_CATEGORY_HARASSMENT",
+            threshold: "BLOCK_MEDIUM_AND_ABOVE",
           },
-          safetySettings: [
-            {
-              category: "HARM_CATEGORY_HARASSMENT",
-              threshold: "BLOCK_MEDIUM_AND_ABOVE",
-            },
-            {
-              category: "HARM_CATEGORY_HATE_SPEECH",
-              threshold: "BLOCK_MEDIUM_AND_ABOVE",
-            },
-            {
-              category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-              threshold: "BLOCK_MEDIUM_AND_ABOVE",
-            },
-            {
-              category: "HARM_CATEGORY_DANGEROUS_CONTENT",
-              threshold: "BLOCK_MEDIUM_AND_ABOVE",
-            },
-          ],
-        }),
-      });
+          {
+            category: "HARM_CATEGORY_HATE_SPEECH",
+            threshold: "BLOCK_MEDIUM_AND_ABOVE",
+          },
+          {
+            category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+            threshold: "BLOCK_MEDIUM_AND_ABOVE",
+          },
+          {
+            category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+            threshold: "BLOCK_MEDIUM_AND_ABOVE",
+          },
+        ],
+      }),
+    });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Gemini API error response:", response.status, errorText);
-        throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
-      }
-
-      const data = await response.json();
-      console.log("Gemini API response status:", response.status);
-      
-      // Check if there was an error with the Gemini API
-      if (data.error) {
-        console.error("Gemini API error:", data.error);
-        throw new Error(`Failed to get response from AI: ${JSON.stringify(data.error)}`);
-      }
-
-      // Extract the AI's response text from the API response format
-      const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "I'm sorry, I couldn't generate a response.";
-      console.log("Successfully generated AI response");
-
-      // If this is a mental health or stress management conversation, log it for the user
-      if (category === "mental_health" || category === "stress_management") {
-        try {
-          console.log("Logging wellness interaction for user:", session.user.id);
-          // In a real implementation, we would store this in Supabase
-        } catch (logError) {
-          console.error("Error logging wellness interaction:", logError);
-        }
-      }
-
-      return new Response(JSON.stringify({ text: aiResponse }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    } catch (geminiError) {
-      console.error("Error calling Gemini API:", geminiError);
-      
-      // Provide a more detailed fallback response with the error
-      console.log("Using fallback response due to API error");
-      const fallbackResponse = getFallbackResponse(category);
-      
-      return new Response(JSON.stringify({ 
-        text: fallbackResponse,
-        fallback: true,
-        error: geminiError.message 
-      }), {
-        status: 200,
+    const data = await response.json();
+    console.log("Gemini API response status:", response.status);
+    console.log("Gemini API response data:", JSON.stringify(data, null, 2));
+    
+    // Check if there was an error with the Gemini API
+    if (data.error) {
+      console.error("Gemini API error:", data.error);
+      return new Response(JSON.stringify({ error: "Failed to get response from AI", details: data.error }), {
+        status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Extract the AI's response text from the new API response format
+    const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "I'm sorry, I couldn't generate a response.";
+    console.log("Successfully generated AI response");
+
+    // If this is a mental health or stress management conversation, log it for the user
+    // This would normally save to a 'wellness_interactions' table
+    if (category === "mental_health" || category === "stress_management") {
+      try {
+        console.log("Logging wellness interaction for user:", session.user.id);
+        // In a real implementation, we would store this in Supabase
+        // const { error } = await supabaseClient.from('wellness_interactions').insert({
+        //   user_id: session.user.id,
+        //   message,
+        //   response: aiResponse,
+        //   category,
+        //   created_at: new Date()
+        // });
+        // if (error) console.error("Error logging interaction:", error);
+      } catch (logError) {
+        console.error("Error logging wellness interaction:", logError);
+      }
+    }
+
+    return new Response(JSON.stringify({ text: aiResponse }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error) {
     console.error("Error in gemini-chat function:", error);
-    return new Response(JSON.stringify({ 
-      error: "An unexpected error occurred", 
-      details: error.message,
-      text: "I'm having trouble connecting right now. Please check your internet connection and try again in a moment."
-    }), {
+    return new Response(JSON.stringify({ error: "An unexpected error occurred", details: error.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
-
-// Fallback responses for when the API fails
-function getFallbackResponse(category: string): string {
-  switch (category) {
-    case "academic":
-      return "I recommend creating a structured study schedule and using active learning techniques like teaching concepts to others or using practice tests. Would you like more specific academic advice?";
-    case "career":
-      return "Consider exploring internships related to your field of study and building a professional network through LinkedIn. What specific career concerns do you have?";
-    case "mental_health":
-      return "It's important to prioritize self-care and reach out for support when needed. Simple practices like mindfulness, physical activity, and connecting with friends can help. Would you like to discuss specific strategies?";
-    case "stress_management":
-      return "Deep breathing exercises, progressive muscle relaxation, and taking short breaks can help manage stress. Remember that it's okay to set boundaries. What specific stressors are you facing?";
-    default:
-      return "I'm here to support you through your academic journey. What specific area would you like guidance on today?";
-  }
-}
