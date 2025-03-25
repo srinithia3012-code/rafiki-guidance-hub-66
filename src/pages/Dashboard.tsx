@@ -1,9 +1,8 @@
 
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import { useAuthStatus } from "@/hooks/useAuthStatus";
 import { toast } from "sonner";
-import AuthPrompt from "@/components/career/AuthPrompt";
 import QuickAccessSection from "@/components/dashboard/QuickAccessSection";
 import NotificationsSection from "@/components/dashboard/NotificationsSection";
 import SelfAssessmentsSection from "@/components/career/SelfAssessmentsSection";
@@ -45,8 +44,9 @@ const Dashboard = () => {
     );
   }
 
+  // If not authenticated, redirect to the homepage
   if (!user) {
-    return <AuthPrompt />;
+    return <Navigate to="/" replace />;
   }
 
   return (
