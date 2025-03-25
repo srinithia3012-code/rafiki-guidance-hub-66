@@ -2,25 +2,12 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { User as SupabaseUser } from "@supabase/supabase-js";
-import { Button } from "@/components/ui/button";
-import { signOut } from "@/services/supabase";
-import { toast } from "sonner";
 
 interface NavLinksProps {
   currentUser: SupabaseUser | null;
 }
 
 const NavLinks: React.FC<NavLinksProps> = ({ currentUser }) => {
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      toast.success("Successfully signed out");
-    } catch (error) {
-      console.error("Error signing out:", error);
-      toast.error("Error signing out");
-    }
-  };
-
   const links = [
     { name: "Home", href: "/", showWhenLoggedIn: false },
     { name: "Dashboard", href: "/dashboard", showWhenLoggedIn: true },
@@ -30,7 +17,6 @@ const NavLinks: React.FC<NavLinksProps> = ({ currentUser }) => {
   ];
 
   const visibleLinks = links.filter(link => {
-    if (currentUser && link.name === "Home") return false;
     if (link.showAlways) return true;
     return currentUser ? link.showWhenLoggedIn : !link.showWhenLoggedIn;
   });
@@ -46,24 +32,6 @@ const NavLinks: React.FC<NavLinksProps> = ({ currentUser }) => {
           {link.name}
         </Link>
       ))}
-
-      {/* Only show sign in/out button - no duplicate */}
-      {currentUser ? (
-        <Button 
-          variant="outline" 
-          onClick={handleSignOut}
-          className="ml-4"
-        >
-          Sign Out
-        </Button>
-      ) : (
-        <Button 
-          asChild 
-          className="ml-4 bg-rafiki-600 hover:bg-rafiki-700"
-        >
-          <Link to="/dashboard">Sign In</Link>
-        </Button>
-      )}
     </nav>
   );
 };

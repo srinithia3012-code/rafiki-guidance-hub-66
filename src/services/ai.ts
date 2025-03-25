@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 // Define the guidance categories
@@ -16,77 +17,21 @@ export const sendMessageToAI = async (
     return getMockResponse(message, category);
   } else {
     try {
-      console.log("Sending message to Gemini API via edge function:", { message, category });
-      
-      // Create a timeout for the entire operation
-      const timeout = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("Request timed out")), 15000);
+      // Call the Gemini AI API through our Supabase edge function
+      const { data, error } = await supabase.functions.invoke("gemini-chat", {
+        body: { message, category, chatHistory: history }
       });
-      
-      // Create the main request promise
-      const requestPromise = (async () => {
-        try {
-          // Call the Gemini AI API through our Supabase edge function
-          const { data, error } = await supabase.functions.invoke("gemini-chat", {
-            body: { message, category, chatHistory: history }
-          });
-          
-          console.log("Gemini API response:", data, "Error:", error);
 
-          if (error) {
-            console.error("Error calling Gemini AI:", error);
-            throw new Error(`AI service error: ${error.message}`);
-          }
+      if (error) {
+        console.error("Error calling Gemini AI:", error);
+        throw new Error(`AI service error: ${error.message}`);
+      }
 
-          return data;
-        } catch (error) {
-          console.error("Failed calling edge function:", error);
-          
-          // If we get a fatal error from Supabase functions invoke
-          if (error.message?.includes("session expired") || error.message?.includes("not authenticated")) {
-            throw new Error("Your session has expired. Please refresh the page and try again.");
-          }
-          
-          if (error.message?.includes("failed to fetch") || error.message?.includes("NetworkError")) {
-            throw new Error("Network error: Unable to reach AI service. Please check your connection.");
-          }
-          
-          throw error;
-        }
-      })();
-      
-      // Race the request against the timeout
-      const result = await Promise.race([requestPromise, timeout]);
-      return result;
-      
+      return data;
     } catch (error) {
       console.error("Failed to send message to AI:", error);
-      
-      // Check for network errors
-      if (error.message?.includes('Failed to fetch') || 
-          error.message?.includes('NetworkError') || 
-          error.message?.includes('Request timed out')) {
-        return { 
-          text: "I'm having trouble connecting right now. Please check your internet connection and try again.", 
-          error: "Network error",
-          fallback: true
-        };
-      }
-      
-      // For session errors
-      if (error.message?.includes('session expired') || error.message?.includes('not authenticated')) {
-        return { 
-          text: "Your session has expired. Please refresh the page and try again.", 
-          error: error.message,
-          fallback: true
-        };
-      }
-      
-      // For other errors, provide a generic fallback
       return { 
-        text: "I'm sorry, I'm having trouble connecting right now. Please try again in a moment.", 
-        error: error.message,
-        fallback: true
+        text: "I'm sorry, I'm having trouble connecting right now. Please try again in a moment." 
       };
     }
   }

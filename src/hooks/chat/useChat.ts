@@ -25,8 +25,7 @@ export function useChat(initialCategory: GuidanceCategory = "general") {
     setInputValue, 
     isLoading, 
     handleSend, 
-    handleKeyDown,
-    retryLastMessage
+    handleKeyDown 
   } = useSendMessage(messages, setMessages, category, user, assessmentData, inputRef);
   
   const handleCategoryChange = (value: string) => {
@@ -49,6 +48,5 @@ export function useChat(initialCategory: GuidanceCategory = "general") {
     handleCategoryChange,
     clearChat: clearMessages,
     assessmentData,
-    retryLastMessage,
   };
 }

@@ -2,8 +2,9 @@
 import React, { useState, useEffect } from "react";
 import { Helmet } from "react-helmet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { supabase } from "@/integrations/supabase/client";
+import { getCurrentUser } from "@/services/supabase";
 import { useCareerData } from "@/hooks/useCareerData";
+import { supabase } from "@/integrations/supabase/client";
 import CareerProfileSection from "@/components/career/CareerProfile";
 import ExploreTab from "@/components/career/tabs/ExploreTab";
 import AssessmentsTab from "@/components/career/tabs/AssessmentsTab";
@@ -15,48 +16,38 @@ import SelfAssessmentsSection from "@/components/career/SelfAssessmentsSection";
 import CourseRecommendationsSection from "@/components/career/CourseRecommendationsSection";
 import MentorshipSection from "@/components/career/MentorshipSection";
 import SuccessStoriesSection from "@/components/career/SuccessStoriesSection";
-import { toast } from "sonner";
 
 const CareerPage: React.FC = () => {
   const [user, setUser] = useState<any>(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isProfileFormOpen, setIsProfileFormOpen] = useState(false);
   
-  // We'll only fetch career data once we confirm the user is logged in
   const { careerProfile, isLoading, refreshData } = useCareerData(user);
 
   // Authentication check
   useEffect(() => {
     const checkUser = async () => {
-      setIsCheckingAuth(true);
       try {
-        const { data, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error("Error checking auth:", error);
-          toast.error("There was a problem checking your login status");
-          return;
-        }
-        
-        setUser(data.session?.user || null);
-        
-        const { data: authListener } = supabase.auth.onAuthStateChange(
-          (_event, session) => {
-            setUser(session?.user || null);
-          }
-        );
-        
-        return () => {
-          authListener.subscription.unsubscribe();
-        };
+        const currentUser = await getCurrentUser();
+        setUser(currentUser);
       } catch (error) {
-        console.error("Error in auth check:", error);
+        console.error("Error checking auth:", error);
       } finally {
         setIsCheckingAuth(false);
       }
     };
     
     checkUser();
+    
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user || null);
+      }
+    );
+    
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
   const handleProfileSuccess = () => {

@@ -24,9 +24,9 @@ const AuthCallback: React.FC = () => {
         }
 
         if (data.session) {
-          console.log('Authentication successful, redirecting to dashboard');
+          console.log('Authentication successful:', data.session);
           toast.success('Successfully signed in!');
-          navigate('/dashboard', { replace: true });
+          navigate('/dashboard'); // Redirect to Dashboard instead of home
         } else {
           // No session found
           console.error('No session found during callback');
