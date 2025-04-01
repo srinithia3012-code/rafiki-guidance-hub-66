@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,11 +5,12 @@ import { CareerProfile } from "@/services/career";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import CareerProfileForm from "@/components/career/CareerProfileForm";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { User } from '@supabase/supabase-js';
 
 interface CareerProfileSectionProps {
   isCheckingAuth: boolean;
   isLoading: boolean;
-  user: any;
+  user: User | null;
   careerProfile: CareerProfile | null;
   isProfileFormOpen: boolean;
   setIsProfileFormOpen: (open: boolean) => void;

@@ -1,4 +1,3 @@
-
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -6,16 +5,16 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { UseFormReturn } from "react-hook-form";
+import { UseFormReturn, FieldValues } from "react-hook-form";
 
-interface FormDatePickerProps {
-  form: UseFormReturn<any>;
-  name: string;
+interface FormDatePickerProps<TFieldValues extends FieldValues = FieldValues> {
+  form: UseFormReturn<TFieldValues>;
+  name: keyof TFieldValues | string;
   label: string;
   placeholder?: string;
 }
 
-const FormDatePicker = ({ form, name, label, placeholder = "Pick a date" }: FormDatePickerProps) => {
+const FormDatePicker = <TFieldValues extends FieldValues = FieldValues>({ form, name, label, placeholder = "Pick a date" }: FormDatePickerProps<TFieldValues>) => {
   return (
     <FormField
       control={form.control}

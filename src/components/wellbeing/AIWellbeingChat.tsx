@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,7 +46,7 @@ const AIWellbeingChat = ({ moodRating }: { moodRating?: number | null }) => {
         }, 500);
       }
     }
-  }, [moodRating, user, initialMessageSent]);
+  }, [moodRating, user, initialMessageSent, handleSend, setInputValue]);
 
   return (
     <Card className="mb-6 h-[500px] flex flex-col shadow-lg">

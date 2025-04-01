@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,9 +33,13 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onSuccess }) => {
       await signUpWithEmail(email, password, { displayName: name });
       toast.success("Account created successfully! Please check your email to confirm your account.");
       onSuccess();
-    } catch (error: any) {
+    } catch (error) {
       console.error("Sign up error:", error);
-      toast.error(error.message || "Failed to create account. Please try again.");
+      let errorMessage = "Failed to create account. Please try again.";
+      if (error instanceof Error) {
+        errorMessage = error.message || errorMessage;
+      }
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }

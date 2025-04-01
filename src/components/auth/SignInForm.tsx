@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,9 +25,13 @@ const SignInForm: React.FC<SignInFormProps> = ({ onSuccess }) => {
       await signInWithEmail(email, password);
       toast.success("Signed in successfully!");
       onSuccess();
-    } catch (error: any) {
+    } catch (error) {
       console.error("Sign in error:", error);
-      toast.error(error.message || "Failed to sign in. Please try again.");
+      let errorMessage = "Failed to sign in. Please try again.";
+      if (error instanceof Error) {
+        errorMessage = error.message || errorMessage;
+      }
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }

@@ -1,17 +1,16 @@
-
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import { UseFormReturn } from "react-hook-form";
+import { UseFormReturn, FieldValues } from "react-hook-form";
 
-interface FormTextareaProps {
-  form: UseFormReturn<any>;
-  name: string;
+interface FormTextareaProps<TFieldValues extends FieldValues = FieldValues> {
+  form: UseFormReturn<TFieldValues>;
+  name: keyof TFieldValues | string;
   label: string;
   placeholder?: string;
   className?: string;
 }
 
-const FormTextarea = ({ form, name, label, placeholder, className }: FormTextareaProps) => {
+const FormTextarea = <TFieldValues extends FieldValues = FieldValues>({ form, name, label, placeholder, className }: FormTextareaProps<TFieldValues>) => {
   return (
     <FormField
       control={form.control}

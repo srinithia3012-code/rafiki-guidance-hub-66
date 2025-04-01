@@ -1,0 +1,5 @@
+[33mcommit cdf5c9290a34378fc8fbeca1399879423d5a1d60[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m
+Author: JackXCodes <jackkasunzu@gmail.com>
+Date:   Tue Apr 1 11:45:42 2025 +0300
+
+    feat: Add CI/CD workflow and apply recent changes

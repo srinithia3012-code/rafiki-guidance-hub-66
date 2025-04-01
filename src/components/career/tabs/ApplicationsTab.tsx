@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,11 +5,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
 import { JobApplication } from "@/services/career";
 import JobApplicationsList from "@/components/career/JobApplicationsList";
+import type { User } from '@supabase/supabase-js';
 
 interface ApplicationsTabProps {
   isCheckingAuth: boolean;
   isLoading: boolean;
-  user: any | null;
+  user: User | null;
   jobApplications: JobApplication[];
   refreshData: () => void;
 }

@@ -1,13 +1,13 @@
-
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Briefcase, TrendingUp, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CareerProfile } from "@/services/career";
 import { Link } from "react-router-dom";
+import type { User } from '@supabase/supabase-js';
 
 interface ExploreTabProps {
-  user: any | null;
+  user: User | null;
   careerProfile: CareerProfile | null;
   setIsProfileFormOpen: (open: boolean) => void;
 }

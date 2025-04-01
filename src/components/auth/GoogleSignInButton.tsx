@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { LucideLoader2 } from "lucide-react";
@@ -23,13 +22,16 @@ const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
       await signInWithGoogle();
       // Note: onSuccess will be called via auth state change in the parent component
       // since OAuth redirects to a different URL
-    } catch (error: any) {
+    } catch (error) {
       console.error("Sign in error:", error);
       // Display a more user-friendly error message
-      const errorMessage = 
-        error.message === 'User rejected the login request' 
-          ? 'Sign-in canceled. Please try again.' 
-          : error.message || "Failed to sign in. Please try again.";
+      let errorMessage = "Failed to sign in. Please try again.";
+      if (error instanceof Error) {
+        errorMessage = 
+          error.message === 'User rejected the login request' 
+            ? 'Sign-in canceled. Please try again.' 
+            : error.message || errorMessage;
+      }
       toast.error(errorMessage);
       setIsLoading(false);
     }
