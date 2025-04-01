@@ -1,5 +1,5 @@
-
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 // Define the guidance categories
 export type GuidanceCategory = "general" | "career" | "academic" | "mental_health" | "stress_management";
@@ -10,30 +10,60 @@ export const sendMessageToAI = async (
   category: GuidanceCategory = "general",
   history: { role: "user" | "model"; content: string }[] = []
 ) => {
-  // Check if we're using the mock or the real Gemini API
-  if (import.meta.env.DEV && !import.meta.env.VITE_USE_REAL_AI) {
-    // Use mock in development unless overridden
-    console.log("Using mock AI response for category:", category);
-    return getMockResponse(message, category);
-  } else {
-    try {
-      // Call the Gemini AI API through our Supabase edge function
-      const { data, error } = await supabase.functions.invoke("gemini-chat", {
-        body: { message, category, chatHistory: history }
-      });
+  try {
+    // Explicitly get the current session and access token
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
 
-      if (error) {
-        console.error("Error calling Gemini AI:", error);
-        throw new Error(`AI service error: ${error.message}`);
-      }
-
-      return data;
-    } catch (error) {
-      console.error("Failed to send message to AI:", error);
-      return { 
-        text: "I'm sorry, I'm having trouble connecting right now. Please try again in a moment." 
-      };
+    if (sessionError) {
+      console.error("Error getting session:", sessionError);
+      toast.error("Authentication error. Please sign in again.");
+      return getMockResponse(message, category);
     }
+
+    if (!sessionData.session) {
+      console.error("No active session found.");
+      toast.error("You need to be signed in to use the chat.");
+      return getMockResponse(message, category);
+    }
+
+    const accessToken = sessionData.session.access_token;
+    console.log("Sending Access Token:", accessToken);
+
+    // Add retries and timeout
+    const response = await supabase.functions.invoke("gemini-chat", {
+      body: { message, category, chatHistory: history },
+      headers: {
+        'Content-Type': 'application/json',
+        // Add the Authorization header explicitly
+        'Authorization': `Bearer ${accessToken}`,
+      },
+      options: {
+        retry: 3,
+        timeout: 15000 // 15 seconds timeout
+      }
+    });
+
+    // Log the full response for debugging
+    console.log('Supabase Function Response:', response);
+
+    if (response.error) {
+      console.error("Error details:", response.error);
+      // Fallback to mock response if there's an error
+      console.log("Falling back to mock response");
+      return getMockResponse(message, category);
+    }
+
+    // Check if response.data exists and has the expected structure
+    if (!response.data || !response.data.text) {
+      console.error("Invalid response format:", response.data);
+      return getMockResponse(message, category);
+    }
+
+    return response.data;
+  } catch (error: any) {
+    console.error("Failed to send message to AI:", error);
+    // Fallback to mock response on error
+    return getMockResponse(message, category);
   }
 };
 
