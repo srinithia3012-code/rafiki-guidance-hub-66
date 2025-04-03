@@ -1,4 +1,3 @@
-
 # Rafiki AI - Student Guidance & Wellbeing Assistant
 
 Rafiki AI is a comprehensive student support platform designed to provide personalized guidance, academic planning, career advice, and wellbeing resources for university students.
@@ -24,6 +23,16 @@ Rafiki AI is a comprehensive student support platform designed to provide person
 - **Mindfulness Practices**: Guided meditation and mindfulness exercises
 - **Crisis Resources**: Access to emergency resources and professional support options
 - **Mood Tracking**: Monitor emotional patterns over time
+
+### Core Pages
+- **`/` (Index/Login)**: Landing page for guests, handling authentication.
+- **`/dashboard`**: Main dashboard for logged-in users.
+- **`/chat`**: Interface for interacting with the AI assistant.
+- **`/career`**: Provides career assessment tools, job market insights, and resources.
+- **`/wellbeing`**: Offers wellbeing assessments, stress management techniques, and support resources.
+- **`/assessments`**: Lists available career and wellbeing assessments.
+- **`/assessments/:assessmentId`**: Page for taking a specific assessment.
+- **`/assessment-results`**: Displays the results of completed assessments.
 
 ## 🚀 Technology Stack
 - **Frontend**: React, TypeScript, Vite

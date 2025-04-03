@@ -1,5 +1,4 @@
-
-import { useState, RefObject } from "react";
+import { useState, RefObject, useEffect } from "react";
 import { User } from "@supabase/supabase-js";
 import { GuidanceCategory, sendMessageToAI, analyzeSentiment } from "@/services/ai";
 import { toast } from "sonner";
@@ -16,6 +15,61 @@ export function useSendMessage(
 ) {
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [hasInitialPromptBeenSent, setHasInitialPromptBeenSent] = useState(false);
+
+  // Send initial prompt automatically when component mounts
+  useEffect(() => {
+    if (user && messages.length === 1 && !hasInitialPromptBeenSent) {
+      sendInitialPrompt();
+      setHasInitialPromptBeenSent(true);
+    }
+  }, [user, messages.length, hasInitialPromptBeenSent]);
+
+  const sendInitialPrompt = async () => {
+    if (!user) return;
+    
+    setIsLoading(true);
+    
+    try {
+      const initialPrompt = "Tell me briefly about what you can help me with as a guidance counselor in this category.";
+      
+      // Convert messages to format expected by AI service
+      const chatHistory = messages
+        .filter(msg => msg.id !== "welcome") // Remove welcome message
+        .map(msg => ({
+          role: msg.sender === "user" ? "user" as const : "model" as const,
+          content: msg.content
+        }));
+
+      // Prepare additional context from assessment data
+      let contextMessage = "";
+      if (assessmentData && assessmentData.score) {
+        contextMessage = getAssessmentPromptContext(assessmentData);
+      }
+
+      // Get response from AI
+      const response = await sendMessageToAI(
+        initialPrompt, 
+        category, 
+        chatHistory
+      );
+      
+      const aiMessage: Message = {
+        id: Date.now().toString(),
+        content: response.text,
+        sender: "ai",
+        timestamp: new Date(),
+        category,
+      };
+
+      setMessages((prev) => [...prev, aiMessage]);
+    } catch (error) {
+      console.error("Error sending initial prompt:", error);
+      toast.error("Failed to connect to AI service. Please try again later.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSend = async () => {
     if (!inputValue.trim()) return;

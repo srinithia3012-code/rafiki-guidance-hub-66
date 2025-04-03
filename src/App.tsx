@@ -3,7 +3,7 @@ import { Toaster } from 'sonner';
 import { useEffect, useState } from "react";
 import Index from "@/pages/Index";
 import NotFound from "@/pages/NotFound";
-import ChatPage from "@/pages/Chat";
+import ChatV2Page from "@/pages/ChatV2";
 import CareerPage from "@/pages/Career";
 import WellbeingPage from "@/pages/Wellbeing";
 import AuthCallback from "@/pages/AuthCallback";
@@ -64,7 +64,7 @@ function App() {
           <Routes>
             <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <Index />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/chat" element={<ChatPage />} />
+            <Route path="/chat" element={<ChatV2Page />} />
             <Route path="/career" element={<CareerPage />} />
             <Route path="/wellbeing" element={<WellbeingPage />} />
             <Route path="/assessments" element={<Assessments />} />

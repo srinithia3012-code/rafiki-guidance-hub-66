@@ -3,31 +3,74 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Heart, Send, RefreshCw, Trash2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useChat } from "@/hooks/chat/useChat";
-import MessageItem from "@/components/chat/MessageItem";
-import TypingIndicator from "@/components/chat/TypingIndicator";
+import { useAuth } from "@/hooks/useAuth";
+import { GuidanceCategory } from "@/services/ai";
+
+interface Message {
+  id: string;
+  content: string;
+  sender: "user" | "ai";
+  timestamp: Date;
+  category?: GuidanceCategory;
+}
+
+// Type definitions for Gemini API request/response
+interface GeminiContent {
+  role: "user" | "model";
+  parts: { text: string }[];
+}
+
+interface GeminiRequest {
+  contents: GeminiContent[];
+  generationConfig: {
+    temperature: number;
+    topK: number;
+    topP: number;
+    maxOutputTokens: number;
+  };
+  safetySettings?: {
+    category: string;
+    threshold: string;
+  }[];
+}
 
 const AIWellbeingChat = ({ moodRating }: { moodRating?: number | null }) => {
-  const { 
-    messages, 
-    inputValue, 
-    setInputValue, 
-    isLoading, 
-    handleSend, 
-    handleKeyDown, 
-    clearChat, 
-    messagesEndRef,
-    user
-  } = useChat("mental_health");
-  
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputValue, setInputValue] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [initialMessageSent, setInitialMessageSent] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { user } = useAuth();
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   
-  // Send initial message based on mood if provided
+  // Category is fixed to mental_health for wellbeing chat
+  const category: GuidanceCategory = "mental_health";
+
+  // Send initial welcome message when component mounts
   useEffect(() => {
-    if (moodRating !== undefined && moodRating !== null && !initialMessageSent && user) {
+    if (user && messages.length === 0) {
+      const welcomeMessage: Message = {
+        id: "welcome",
+        content: "Hello! I'm Rafiki, your AI wellbeing assistant. How are you feeling today?",
+        sender: "ai",
+        timestamp: new Date(),
+        category
+      };
+      
+      setMessages([welcomeMessage]);
+      
+      // Send an initial prompt to the API if not triggered by mood rating
+      if (moodRating === undefined || moodRating === null) {
+        sendInitialPrompt();
+      }
+    }
+  }, [user, messages.length, moodRating]);
+
+  // Process mood rating to send initial message if provided
+  useEffect(() => {
+    if (moodRating !== undefined && moodRating !== null && !initialMessageSent && user && messages.length > 0) {
       const moodMessages = {
         1: "I'm feeling really down today, can you help me?",
         2: "I'm not feeling great today. Any advice?",
@@ -41,12 +84,266 @@ const AIWellbeingChat = ({ moodRating }: { moodRating?: number | null }) => {
       if (initialMessage) {
         setInputValue(initialMessage);
         setTimeout(() => {
-          handleSend();
+          handleMoodBasedMessage(initialMessage);
           setInitialMessageSent(true);
         }, 500);
       }
     }
-  }, [moodRating, user, initialMessageSent, handleSend, setInputValue]);
+  }, [moodRating, user, initialMessageSent, messages.length]);
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // Focus input on load
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  // Get system prompt for mental health
+  const getSystemPrompt = (): string => {
+    return "You are Rafiki, a helpful AI guidance counselor for university students. " +
+      "Focus on mental health support, emotional well-being, and self-care strategies. " +
+      "Provide empathetic responses and practical coping mechanisms for stress, anxiety, depression, and other mental health concerns. " +
+      "If someone appears to be in crisis, suggest they reach out to professional mental health services. " +
+      "Always validate their feelings and provide evidence-based suggestions when appropriate.";
+  };
+
+  // Send a message directly to the Gemini API
+  const sendToGeminiAPI = async (
+    prompt: string, 
+    messageHistory: Message[]
+  ): Promise<string> => {
+    if (!apiKey) {
+      throw new Error("Gemini API key not found. Please check your environment variables.");
+    }
+
+    // Convert messages to the format expected by Gemini API
+    const formattedHistory = messageHistory
+      .filter(msg => msg.id !== "welcome")
+      .map(msg => ({
+        role: msg.sender === "user" ? "user" as const : "model" as const,
+        parts: [{ text: msg.content }]
+      }));
+
+    // Add the system prompt as the first message from the model
+    const contents: GeminiContent[] = [
+      {
+        role: "model",
+        parts: [{ text: getSystemPrompt() }]
+      },
+      ...formattedHistory,
+      {
+        role: "user",
+        parts: [{ text: prompt }]
+      }
+    ];
+
+    // Prepare request body
+    const requestBody: GeminiRequest = {
+      contents,
+      generationConfig: {
+        temperature: 0.7,
+        topP: 0.8,
+        topK: 40,
+        maxOutputTokens: 1024,
+      },
+      safetySettings: [
+        {
+          category: "HARM_CATEGORY_HARASSMENT",
+          threshold: "BLOCK_MEDIUM_AND_ABOVE",
+        },
+        {
+          category: "HARM_CATEGORY_HATE_SPEECH",
+          threshold: "BLOCK_MEDIUM_AND_ABOVE",
+        },
+        {
+          category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+          threshold: "BLOCK_MEDIUM_AND_ABOVE",
+        },
+        {
+          category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+          threshold: "BLOCK_MEDIUM_AND_ABOVE",
+        },
+      ],
+    };
+
+    try {
+      // Make the API request
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(requestBody),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Gemini API error: ${errorData.error?.message || response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      // Extract the AI's response text
+      const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "I'm sorry, I couldn't generate a response.";
+      
+      // Format the response text to remove asterisks
+      const formattedResponse = formatResponseText(aiResponse);
+      
+      return formattedResponse;
+    } catch (error) {
+      console.error("Error calling Gemini API:", error);
+      throw error;
+    }
+  };
+
+  // Format response text to remove asterisks and other markdown formatting
+  const formatResponseText = (text: string): string => {
+    // Replace markdown headings/formatting indicators
+    let formattedText = text
+      // Remove asterisks used for emphasis/bold
+      .replace(/\*\*/g, '')
+      .replace(/\*/g, '')
+      // Replace markdown bullets with clean bullets
+      .replace(/\* /g, '• ');
+    
+    return formattedText;
+  };
+
+  const sendInitialPrompt = async () => {
+    if (!user) return;
+    
+    setIsLoading(true);
+    
+    try {
+      const initialPrompt = "Tell me briefly about how you can support me with mental health and wellbeing issues.";
+      
+      // Get response from Gemini API
+      const responseText = await sendToGeminiAPI(initialPrompt, messages);
+      
+      const aiMessage: Message = {
+        id: Date.now().toString(),
+        content: responseText,
+        sender: "ai",
+        timestamp: new Date(),
+        category,
+      };
+
+      setMessages(prev => [...prev, aiMessage]);
+    } catch (error) {
+      console.error("Error sending initial prompt:", error);
+      toast.error("Failed to connect to AI service. Please try again later.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleMoodBasedMessage = async (content: string) => {
+    if (!user) return;
+    
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      content,
+      sender: "user",
+      timestamp: new Date(),
+      category,
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInputValue("");
+    setIsLoading(true);
+
+    try {
+      // Get response from Gemini API
+      const responseText = await sendToGeminiAPI(content, [...messages, userMessage]);
+      
+      const aiMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: responseText,
+        sender: "ai",
+        timestamp: new Date(),
+        category,
+      };
+
+      setMessages(prev => [...prev, aiMessage]);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      toast.error("Failed to get a response. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSend = async () => {
+    if (!inputValue.trim()) return;
+    
+    // Check if user is authenticated
+    if (!user) {
+      toast.error("Please sign in to use the chat feature");
+      return;
+    }
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      content: inputValue,
+      sender: "user",
+      timestamp: new Date(),
+      category,
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInputValue("");
+    setIsLoading(true);
+
+    try {
+      // Get response from Gemini API
+      const responseText = await sendToGeminiAPI(inputValue, [...messages, userMessage]);
+      
+      const aiMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: responseText,
+        sender: "ai",
+        timestamp: new Date(),
+        category,
+      };
+
+      setMessages(prev => [...prev, aiMessage]);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      toast.error("Failed to get a response. Please try again.");
+    } finally {
+      setIsLoading(false);
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+  
+  const clearChat = () => {
+    // Create welcome message
+    const welcomeMessage: Message = {
+      id: "welcome",
+      content: "Hello! I'm Rafiki, your AI wellbeing assistant. How are you feeling today?",
+      sender: "ai",
+      timestamp: new Date(),
+      category,
+    };
+    
+    setMessages([welcomeMessage]);
+    setInitialMessageSent(false);
+  };
 
   return (
     <Card className="mb-6 h-[500px] flex flex-col shadow-lg">
@@ -78,48 +375,56 @@ const AIWellbeingChat = ({ moodRating }: { moodRating?: number | null }) => {
         ) : (
           <>
             <div className="flex-1 overflow-y-auto px-4 py-4">
-              {messages.map((message) => (
-                <div key={message.id} className={`mb-4 flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[80%] rounded-lg p-3 ${
-                    message.sender === 'user' 
-                      ? 'bg-primary text-white rounded-tr-none' 
-                      : 'bg-gray-100 rounded-tl-none'
-                  }`}>
-                    {message.sender === 'ai' && (
-                      <div className="flex items-center mb-1">
-                        <Heart className="h-4 w-4 text-rose-500 mr-1" />
-                        <span className="text-xs font-medium text-rose-500">Rafiki</span>
-                        <span className="text-xs text-gray-500 ml-2">
-                          {new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                        </span>
-                      </div>
-                    )}
-                    <div className={`text-sm ${message.sender === 'user' ? 'text-white' : 'text-gray-800'}`}>
-                      {message.content}
-                    </div>
-                    {message.sender === 'user' && (
-                      <div className="flex justify-end mt-1">
-                        <span className="text-xs text-white/70">
-                          {new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                        </span>
-                      </div>
-                    )}
-                  </div>
+              {messages.length === 0 ? (
+                <div className="flex h-full items-center justify-center text-gray-500">
+                  <p>Start a conversation with Rafiki</p>
                 </div>
-              ))}
-              {isLoading && (
-                <div className="flex justify-start mb-4">
-                  <div className="bg-gray-100 rounded-lg rounded-tl-none p-3 max-w-[80%]">
-                    <div className="flex items-center mb-1">
-                      <Heart className="h-4 w-4 text-rose-500 mr-1" />
-                      <span className="text-xs font-medium text-rose-500">Rafiki</span>
+              ) : (
+                <div className="space-y-4">
+                  {messages.map((message) => (
+                    <div key={message.id} className={`mb-4 flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[80%] rounded-lg p-3 ${
+                        message.sender === 'user' 
+                          ? 'bg-primary text-white rounded-tr-none' 
+                          : 'bg-gray-100 rounded-tl-none'
+                      }`}>
+                        {message.sender === 'ai' && (
+                          <div className="flex items-center mb-1">
+                            <Heart className="h-4 w-4 text-rose-500 mr-1" />
+                            <span className="text-xs font-medium text-rose-500">Rafiki</span>
+                            <span className="text-xs text-gray-500 ml-2">
+                              {new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                            </span>
+                          </div>
+                        )}
+                        <div className={`text-sm ${message.sender === 'user' ? 'text-white' : 'text-gray-800'}`}>
+                          {message.content}
+                        </div>
+                        {message.sender === 'user' && (
+                          <div className="flex justify-end mt-1">
+                            <span className="text-xs text-white/70">
+                              {new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-1">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                  ))}
+                  {isLoading && (
+                    <div className="flex justify-start mb-4">
+                      <div className="bg-gray-100 rounded-lg rounded-tl-none p-3 max-w-[80%]">
+                        <div className="flex items-center mb-1">
+                          <Heart className="h-4 w-4 text-rose-500 mr-1" />
+                          <span className="text-xs font-medium text-rose-500">Rafiki</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               )}
               <div ref={messagesEndRef} />
@@ -133,6 +438,7 @@ const AIWellbeingChat = ({ moodRating }: { moodRating?: number | null }) => {
                   placeholder="Type your message..."
                   className="flex-1"
                   ref={inputRef}
+                  disabled={isLoading}
                 />
                 <Button 
                   onClick={handleSend} 
