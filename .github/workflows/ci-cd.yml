@@ -27,60 +27,96 @@ jobs:
           node-version: 20
           cache: 'npm'
       
-      - name: Fix duplicate imports in useChat.ts
+      - name: Manually fix useChat.ts duplicated imports
         run: |
-          # Remove the duplicate import line (useRef, useState from React)
-          sed -i '3d' src/hooks/chat/useChat.ts
-          echo "Fixed duplicate imports in useChat.ts"
+          # Completely recreate the file to ensure no duplicate imports
+          cat > src/hooks/chat/useChat.ts << 'EOF'
+          import { useRef, useState } from "react";
+          import { GuidanceCategory } from "@/services/ai";
+          import { useAuthCheck } from "./useAuthCheck";
+          import { useAssessmentData } from "./useAssessmentData";
+          import { useMessages } from "./useMessages";
+          import { useSendMessage } from "./useSendMessage";
+          import { useMessagePersistence } from "@/hooks/useMessagePersistence";
+          
+          export function useChat(initialCategory: GuidanceCategory = "general") {
+            const [category, setCategory] = useState<GuidanceCategory>(initialCategory);
+            const inputRef = useRef<HTMLInputElement>(null);
+            
+            // Auth checking
+            const { user, isCheckingAuth } = useAuthCheck();
+            
+            // Assessment data loading
+            const { assessmentData } = useAssessmentData(user, category);
+            
+            // Messages handling
+            const { messages, setMessages, messagesEndRef, clearMessages } = useMessages(category, assessmentData);
+            
+            // Chat history persistence
+            const { clearPersistedMessages } = useMessagePersistence(
+              messages,
+              setMessages,
+              category,
+              user?.id || null
+            );
+            
+            // Message sending
+            const { 
+              inputValue, 
+              setInputValue, 
+              isLoading, 
+              handleSend, 
+              handleKeyDown,
+              sendInitialPrompt 
+            } = useSendMessage(messages, setMessages, category, user, assessmentData, inputRef);
+            
+            const handleCategoryChange = (value: string) => {
+              const newCategory = value as GuidanceCategory;
+              
+              // Only process change if category actually changes
+              if (newCategory !== category) {
+                setCategory(newCategory);
+                
+                // Clear existing messages
+                clearMessages();
+                
+                // Reset hasInitialPromptBeenSent in useSendMessage by triggering a new message sequence
+                if (user) {
+                  // The initial welcome message will be added by useMessages effect
+                  // sendInitialPrompt will be triggered by useSendMessage effect when messages.length === 1
+                }
+              }
+            };
+          
+            const clearChat = () => {
+              clearMessages();
+              clearPersistedMessages();
+            };
+          
+            return {
+              messages,
+              inputValue,
+              setInputValue,
+              isLoading,
+              category,
+              user,
+              isCheckingAuth,
+              messagesEndRef,
+              inputRef,
+              handleSend,
+              handleKeyDown,
+              handleCategoryChange,
+              clearChat,
+              assessmentData,
+            };
+          }
+          EOF
+          echo "Fixed useChat.ts file"
       
-      - name: Create public directory and SPA redirects
+      - name: Create SPA redirects for Netlify
         run: |
           mkdir -p public
           echo "/* /index.html 200" > public/_redirects
-          echo "Creating 404.html for SPA routing on GitHub Pages"
-          cat > public/404.html << EOF
-          <!DOCTYPE html>
-          <html>
-            <head>
-              <meta charset="utf-8">
-              <title>Rafiki Guidance Hub</title>
-              <script type="text/javascript">
-                // Single Page Apps for GitHub Pages
-                // MIT License
-                // https://github.com/rafgraph/spa-github-pages
-                var pathSegmentsToKeep = 1;
-
-                var l = window.location;
-                l.replace(
-                  l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
-                  l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
-                  l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
-                  (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
-                  l.hash
-                );
-              </script>
-            </head>
-            <body>
-            </body>
-          </html>
-          EOF
-
-          # Add SPA redirect script to index.html
-          cat > public/spa-redirect.js << EOF
-          // This script checks to see if a redirect is present in the query string,
-          // converts it back into the correct url and adds it to the browser's history
-          // using window.history.replaceState(...), which won't cause the browser to attempt to load the new URL.
-          (function(l) {
-            if (l.search[1] === '/' ) {
-              var decoded = l.search.slice(1).split('&').map(function(s) { 
-                return s.replace(/~and~/g, '&')
-              }).join('?');
-              window.history.replaceState(null, null,
-                  l.pathname.slice(0, -1) + decoded + l.hash
-              );
-            }
-          }(window.location))
-          EOF
       
       - name: Install dependencies
         run: npm install
@@ -94,10 +130,21 @@ jobs:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
           VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
       
-      - name: Update index.html in dist for SPA routing
+      - name: Create netlify.toml
         run: |
-          sed -i '/<head>/a \    <script type="text/javascript">(function(l){if(l.search[1]==="\/"){ var decoded=l.search.slice(1).split("&").map(function(s){return s.replace(/~and~/g,"&")}).join("?");window.history.replaceState(null,null,l.pathname.slice(0,-1)+decoded+l.hash)}})(window.location)</script>' dist/index.html
-          cp public/spa-redirect.js dist/
+          cat > netlify.toml << EOF
+          [build]
+            publish = "dist"
+            command = "npm run build"
+
+          [[redirects]]
+            from = "/*"
+            to = "/index.html"
+            status = 200
+
+          [build.environment]
+            VITE_API_URL = "/api"
+          EOF
       
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -106,12 +153,6 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: './dist'
-
-      - name: Fix asset paths in dist
-        run: |
-          find dist -name "*.html" -exec sed -i 's/src="\//src="\/rafiki-guidance-hub-66\//g' {} \;
-          find dist -name "*.html" -exec sed -i 's/href="\//href="\/rafiki-guidance-hub-66\//g' {} \;
-          find dist -name "*.js" -exec sed -i 's/from"\//from"\/rafiki-guidance-hub-66\//g' {} \;
 
   deploy:
     environment:
