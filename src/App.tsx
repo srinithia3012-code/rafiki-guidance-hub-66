@@ -30,6 +30,9 @@ function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Get the correct basename for GitHub Pages or development
+  const basename = import.meta.env.DEV ? '/' : '/rafiki-guidance-hub-66';
+
   useEffect(() => {
     const checkUser = async () => {
       const { data, error } = await supabase.auth.getSession();
@@ -84,7 +87,7 @@ function App() {
   }
 
   return (
-    <Router>
+    <Router basename={basename}>
       <Toaster position="top-center" />
       <div className="min-h-screen flex flex-col">
         <Navbar />
