@@ -5,7 +5,8 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  base: "/rafiki-guidance-hub-66/",
+  // Only use base path for production, not for development
+  base: mode === 'production' ? "/rafiki-guidance-hub-66/" : "/",
   server: {
     host: "::",
     port: 8080,

@@ -96,7 +96,7 @@ jobs:
       
       - name: Update index.html in dist for SPA routing
         run: |
-          sed -i '/<head>/a \    <script type="text/javascript" src="./spa-redirect.js"></script>' dist/index.html
+          sed -i '/<head>/a \    <script type="text/javascript">(function(l){if(l.search[1]==="\/"){ var decoded=l.search.slice(1).split("&").map(function(s){return s.replace(/~and~/g,"&")}).join("?");window.history.replaceState(null,null,l.pathname.slice(0,-1)+decoded+l.hash)}})(window.location)</script>' dist/index.html
           cp public/spa-redirect.js dist/
       
       - name: Setup Pages
@@ -106,6 +106,12 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: './dist'
+
+      - name: Fix asset paths in dist
+        run: |
+          find dist -name "*.html" -exec sed -i 's/src="\//src="\/rafiki-guidance-hub-66\//g' {} \;
+          find dist -name "*.html" -exec sed -i 's/href="\//href="\/rafiki-guidance-hub-66\//g' {} \;
+          find dist -name "*.js" -exec sed -i 's/from"\//from"\/rafiki-guidance-hub-66\//g' {} \;
 
   deploy:
     environment:

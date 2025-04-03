@@ -31,7 +31,7 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   // Get the correct basename for GitHub Pages or development
-  const basename = import.meta.env.DEV ? '/' : '/rafiki-guidance-hub-66';
+  const basename = import.meta.env.PROD ? '/rafiki-guidance-hub-66' : '';
 
   useEffect(() => {
     const checkUser = async () => {
