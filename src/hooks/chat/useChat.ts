@@ -4,6 +4,7 @@ import { useAuthCheck } from "./useAuthCheck";
 import { useAssessmentData } from "./useAssessmentData";
 import { useMessages } from "./useMessages";
 import { useSendMessage } from "./useSendMessage";
+import { useMessagePersistence } from "@/hooks/useMessagePersistence";
 
 export function useChat(initialCategory: GuidanceCategory = "general") {
   const [category, setCategory] = useState<GuidanceCategory>(initialCategory);
@@ -17,6 +18,14 @@ export function useChat(initialCategory: GuidanceCategory = "general") {
   
   // Messages handling
   const { messages, setMessages, messagesEndRef, clearMessages } = useMessages(category, assessmentData);
+  
+  // Chat history persistence
+  const { clearPersistedMessages } = useMessagePersistence(
+    messages,
+    setMessages,
+    category,
+    user?.id || null
+  );
   
   // Message sending
   const { 
@@ -46,6 +55,11 @@ export function useChat(initialCategory: GuidanceCategory = "general") {
     }
   };
 
+  const clearChat = () => {
+    clearMessages();
+    clearPersistedMessages();
+  };
+
   return {
     messages,
     inputValue,
@@ -59,7 +73,7 @@ export function useChat(initialCategory: GuidanceCategory = "general") {
     handleSend,
     handleKeyDown,
     handleCategoryChange,
-    clearChat: clearMessages,
+    clearChat,
     assessmentData,
   };
 }

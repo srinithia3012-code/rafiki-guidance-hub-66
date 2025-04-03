@@ -1,19 +1,30 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from 'sonner';
-import { useEffect, useState } from "react";
-import Index from "@/pages/Index";
-import NotFound from "@/pages/NotFound";
-import ChatV2Page from "@/pages/ChatV2";
-import CareerPage from "@/pages/Career";
-import WellbeingPage from "@/pages/Wellbeing";
-import AuthCallback from "@/pages/AuthCallback";
-import Dashboard from "@/pages/Dashboard";
-import Assessments from "@/pages/Assessments";
-import AssessmentTaking from "@/pages/AssessmentTaking";
-import AssessmentResults from "@/pages/AssessmentResults";
-import Navbar from "@/components/Navbar";
+import { useEffect, useState, Suspense, lazy } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import "./App.css";
+
+// Eager load homepage and navbar for immediate rendering
+import Index from "@/pages/Index";
+import Navbar from "@/components/Navbar";
+
+// Lazy load other pages for better performance
+const NotFound = lazy(() => import("@/pages/NotFound"));
+const ChatV2Page = lazy(() => import("@/pages/ChatV2"));
+const CareerPage = lazy(() => import("@/pages/Career"));
+const WellbeingPage = lazy(() => import("@/pages/Wellbeing"));
+const AuthCallback = lazy(() => import("@/pages/AuthCallback"));
+const Dashboard = lazy(() => import("@/pages/Dashboard"));
+const Assessments = lazy(() => import("@/pages/Assessments"));
+const AssessmentTaking = lazy(() => import("@/pages/AssessmentTaking"));
+const AssessmentResults = lazy(() => import("@/pages/AssessmentResults"));
+
+// Loading fallback component
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-rafiki-600"></div>
+  </div>
+);
 
 function App() {
   const [user, setUser] = useState(null);
@@ -47,12 +58,29 @@ function App() {
     };
   }, []);
 
+  // Prefetch main pages for faster navigation after initial load
+  useEffect(() => {
+    // Prefetch common routes after initial render
+    const prefetchRoutes = async () => {
+      if (!loading) {
+        const isPrefetchSupported = 'prefetch' in HTMLLinkElement.prototype;
+        
+        if (isPrefetchSupported) {
+          if (user) {
+            import("@/pages/Dashboard");
+            import("@/pages/ChatV2");
+          } else {
+            import("@/pages/Index");
+          }
+        }
+      }
+    };
+    
+    prefetchRoutes();
+  }, [loading, user]);
+
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-rafiki-600"></div>
-      </div>
-    );
+    return <PageLoader />;
   }
 
   return (
@@ -61,18 +89,20 @@ function App() {
       <div className="min-h-screen flex flex-col">
         <Navbar />
         <main className="flex-grow">
-          <Routes>
-            <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <Index />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/chat" element={<ChatV2Page />} />
-            <Route path="/career" element={<CareerPage />} />
-            <Route path="/wellbeing" element={<WellbeingPage />} />
-            <Route path="/assessments" element={<Assessments />} />
-            <Route path="/assessments/:assessmentId" element={<AssessmentTaking />} />
-            <Route path="/assessment-results" element={<AssessmentResults />} />
-            <Route path="/auth/callback" element={<AuthCallback />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <Index />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/chat" element={<ChatV2Page />} />
+              <Route path="/career" element={<CareerPage />} />
+              <Route path="/wellbeing" element={<WellbeingPage />} />
+              <Route path="/assessments" element={<Assessments />} />
+              <Route path="/assessments/:assessmentId" element={<AssessmentTaking />} />
+              <Route path="/assessment-results" element={<AssessmentResults />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
         </main>
       </div>
     </Router>
