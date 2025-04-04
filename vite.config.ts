@@ -1,3 +1,4 @@
+
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
@@ -5,8 +6,8 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  // Only use base path for production, not for development
-  base: mode === 'production' ? "/rafiki-guidance-hub-66/" : "/",
+  // Set base path for both development and production
+  base: "/rafiki-guidance-hub-66/",
   server: {
     host: "::",
     port: 8080,

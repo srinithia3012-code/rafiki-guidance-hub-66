@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from 'sonner';
 import { useEffect, useState, Suspense, lazy } from "react";
@@ -30,8 +31,8 @@ function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Get the correct basename for GitHub Pages or development
-  const basename = import.meta.env.PROD ? '/rafiki-guidance-hub-66' : '';
+  // Always use the same basename for GitHub Pages
+  const basename = "/rafiki-guidance-hub-66";
 
   useEffect(() => {
     const checkUser = async () => {
