@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -29,37 +30,59 @@ export const sendMessageToAI = async (
     const accessToken = sessionData.session.access_token;
     console.log("Sending Access Token:", accessToken);
 
-    // Add retries and timeout
-    const response = await supabase.functions.invoke("gemini-chat", {
-      body: { message, category, chatHistory: history },
-      headers: {
-        'Content-Type': 'application/json',
-        // Add the Authorization header explicitly
-        'Authorization': `Bearer ${accessToken}`,
-      },
-      options: {
-        retry: 3,
-        timeout: 15000 // 15 seconds timeout
+    // Implement retry logic manually
+    let attempts = 0;
+    const maxAttempts = 3;
+    let lastError = null;
+    
+    while (attempts < maxAttempts) {
+      try {
+        // Add timeout using AbortController
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        
+        const response = await supabase.functions.invoke("gemini-chat", {
+          body: { message, category, chatHistory: history },
+          headers: {
+            'Content-Type': 'application/json',
+            // Add the Authorization header explicitly
+            'Authorization': `Bearer ${accessToken}`,
+          },
+          // Using signal for timeout instead of options.timeout
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        // Log the full response for debugging
+        console.log('Supabase Function Response:', response);
+
+        if (response.error) {
+          console.error("Error details:", response.error);
+          throw new Error(response.error.message || "Unknown error");
+        }
+
+        // Check if response.data exists and has the expected structure
+        if (!response.data || !response.data.text) {
+          console.error("Invalid response format:", response.data);
+          throw new Error("Invalid response format from AI service");
+        }
+
+        return response.data;
+      } catch (error) {
+        lastError = error;
+        attempts++;
+        
+        if (attempts < maxAttempts) {
+          console.log(`Retry attempt ${attempts} of ${maxAttempts}...`);
+          // Add exponential backoff
+          await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempts - 1)));
+        }
       }
-    });
-
-    // Log the full response for debugging
-    console.log('Supabase Function Response:', response);
-
-    if (response.error) {
-      console.error("Error details:", response.error);
-      // Fallback to mock response if there's an error
-      console.log("Falling back to mock response");
-      return getMockResponse(message, category);
     }
-
-    // Check if response.data exists and has the expected structure
-    if (!response.data || !response.data.text) {
-      console.error("Invalid response format:", response.data);
-      return getMockResponse(message, category);
-    }
-
-    return response.data;
+    
+    console.error(`Failed after ${maxAttempts} attempts:`, lastError);
+    return getMockResponse(message, category);
   } catch (error: any) {
     console.error("Failed to send message to AI:", error);
     // Fallback to mock response on error

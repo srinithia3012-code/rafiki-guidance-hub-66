@@ -11,6 +11,16 @@ console.log('Supabase URL:', SUPABASE_URL);
 console.log('Environment mode:', import.meta.env.MODE);
 console.log('Base URL:', import.meta.env.BASE_URL);
 
+// Determine the redirectTo URL based on environment
+const getRedirectUrl = () => {
+  // For GitHub Pages deployment
+  if (import.meta.env.MODE === 'production' && window.location.hostname.includes('github.io')) {
+    return `${window.location.origin}/rafiki-guidance-hub-66/auth/callback`;
+  }
+  // For local development or Lovable preview
+  return `${window.location.origin}/auth/callback`;
+};
+
 // Create the Supabase client
 export const supabase = createClient<Database>(
   SUPABASE_URL,
@@ -20,7 +30,8 @@ export const supabase = createClient<Database>(
       flowType: 'pkce',
       autoRefreshToken: true,
       persistSession: true,
-      detectSessionInUrl: true
+      detectSessionInUrl: true,
+      redirectTo: getRedirectUrl()
     }
   }
 );

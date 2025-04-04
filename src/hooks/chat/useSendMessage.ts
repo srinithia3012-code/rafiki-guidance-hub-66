@@ -1,3 +1,4 @@
+
 import { useState, RefObject, useEffect } from "react";
 import { User } from "@supabase/supabase-js";
 import { GuidanceCategory, sendMessageToAI, analyzeSentiment } from "@/services/ai";
@@ -162,6 +163,7 @@ export function useSendMessage(
     setInputValue,
     isLoading,
     handleSend,
-    handleKeyDown
+    handleKeyDown,
+    sendInitialPrompt  // Ensure this is exported
   };
 }

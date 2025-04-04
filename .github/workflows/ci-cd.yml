@@ -1,3 +1,4 @@
+
 name: Deploy to GitHub Pages
 
 on:
@@ -27,12 +28,6 @@ jobs:
           node-version: 20
           cache: 'npm'
       
-      - name: Fix duplicate imports in useChat.ts
-        run: |
-          # Remove the duplicate import line (line 3)
-          sed -i '3d' src/hooks/chat/useChat.ts
-          echo "Fixed duplicate imports in useChat.ts"
-      
       - name: Install dependencies
         run: |
           npm cache clean --force
@@ -40,9 +35,16 @@ jobs:
           npm install --no-optional
         
       - name: Build
-        run: npm run build:ci
+        run: npm run build
         env:
+          GITHUB_ACTIONS: 'true'
           CI: false
+      
+      # Create a special 404.html file for GitHub Pages SPA routing
+      - name: Create SPA 404.html
+        run: |
+          cp dist/index.html dist/404.html
+          echo "Created SPA 404.html for client-side routing"
       
       - name: Setup Pages
         uses: actions/configure-pages@v4
