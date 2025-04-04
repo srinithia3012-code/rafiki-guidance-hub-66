@@ -1,230 +1,110 @@
+import OpenAI from 'openai';
 
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+// Define types for messages
+export type ChatMessage = {
+  role: 'user' | 'model';
+  content: string;
+};
 
-// Define the guidance categories
-export type GuidanceCategory = "general" | "career" | "academic" | "mental_health" | "stress_management";
+export type GuidanceCategory = "general" | "career" | "academic" | "wellbeing" | "stress_management" | "mental_health";
 
-// Function for sending message to AI
-export const sendMessageToAI = async (
-  message: string,
-  category: GuidanceCategory = "general",
-  history: { role: "user" | "model"; content: string }[] = []
-) => {
+// Initialize OpenAI client (replace with your actual API key)
+const openai = new OpenAI({
+  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
+  dangerouslyAllowBrowser: true, // remove this line in production
+});
+
+// Mock API response type
+type MockApiResponse = {
+  response: string;
+  sources?: string[];
+};
+
+// Function to send message to AI and get response
+export const sendMessageToAI = async (message: string, category: GuidanceCategory = "general", chatHistory: ChatMessage[] = []) => {
   try {
-    // Explicitly get the current session and access token
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-
-    if (sessionError) {
-      console.error("Error getting session:", sessionError);
-      toast.error("Authentication error. Please sign in again.");
-      return getMockResponse(message, category);
-    }
-
-    if (!sessionData.session) {
-      console.error("No active session found.");
-      toast.error("You need to be signed in to use the chat.");
-      return getMockResponse(message, category);
-    }
-
-    const accessToken = sessionData.session.access_token;
-    console.log("Sending Access Token:", accessToken);
-
-    // Implement retry logic manually
-    let attempts = 0;
-    const maxAttempts = 3;
-    let lastError = null;
+    const controller = new AbortController();
     
-    while (attempts < maxAttempts) {
+    // Set a timeout to abort the request if it takes too long
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+    }, 30000); // 30 seconds timeout
+    
+    // In development, use the local mock API
+    if (import.meta.env.MODE === 'development' || import.meta.env.MODE === 'preview') {
+      // Determine which mock API endpoint to use based on category
+      const endpoint = category !== 'general' 
+        ? `/api/chat-${category}.json`
+        : '/api/chat.json';
+      
       try {
-        // Use timeout in a different way
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Request timed out")), 15000)
-        );
-        
-        const functionPromise = supabase.functions.invoke("gemini-chat", {
-          body: { message, category, chatHistory: history },
-          headers: {
-            'Content-Type': 'application/json',
-            // Add the Authorization header explicitly
-            'Authorization': `Bearer ${accessToken}`,
-          }
+        const response = await fetch(endpoint, { 
+          signal: controller.signal as any
         });
         
-        // Race between the function call and timeout
-        const response = await Promise.race([functionPromise, timeoutPromise]);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to fetch from mock API');
+        }
         
-        // Log the full response for debugging
-        console.log('Supabase Function Response:', response);
-
-        if ('error' in response) {
-          console.error("Error details:", response.error);
-          throw new Error(response.error.message || "Unknown error");
-        }
-
-        // Check if response.data exists and has the expected structure
-        if (!response.data || !response.data.text) {
-          console.error("Invalid response format:", response.data);
-          throw new Error("Invalid response format from AI service");
-        }
-
-        return response.data;
-      } catch (error) {
-        lastError = error;
-        attempts++;
+        const data = await response.json();
+        clearTimeout(timeoutId);
         
-        if (attempts < maxAttempts) {
-          console.log(`Retry attempt ${attempts} of ${maxAttempts}...`);
-          // Add exponential backoff
-          await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempts - 1)));
-        }
+        return {
+          text: data.response || "I'm sorry, I don't have an answer for that.",
+          sourceLinks: data.sources || []
+        };
+      } catch (error: any) {
+        clearTimeout(timeoutId);
+        console.error('Error fetching from mock API:', error);
+        throw new Error(error.message || 'Failed to get AI response');
       }
+    } else {
+      // In production, we would use a real API
+      console.log('Production AI call with message:', message);
+      console.log('Category:', category);
+      console.log('Chat history length:', chatHistory.length);
+      
+      // Simulating a production response for now
+      clearTimeout(timeoutId);
+      return {
+        text: "This is a simulated AI response. In production, this would come from an actual AI service.",
+        sourceLinks: []
+      };
     }
-    
-    console.error(`Failed after ${maxAttempts} attempts:`, lastError);
-    return getMockResponse(message, category);
   } catch (error: any) {
-    console.error("Failed to send message to AI:", error);
-    // Fallback to mock response on error
-    return getMockResponse(message, category);
+    console.error('Error in AI service:', error);
+    throw new Error(error?.message || 'Failed to get AI response');
   }
 };
 
-// Mock function for getting response - useful for development
-const getMockResponse = async (message: string, category: GuidanceCategory) => {
-  // Simulate network request
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  // Return mock response based on category
-  let response = "";
-  
-  switch (category) {
-    case "career":
-      response = "Based on your career interests, I'd suggest exploring internship opportunities that align with your studies. Would you like me to help you prepare a resume or cover letter?";
-      break;
-    case "academic":
-      response = "For academic improvement, consider forming a study group with classmates. Research shows collaborative learning can improve retention. What subject are you finding most challenging?";
-      break;
-    case "mental_health":
-      // More detailed mental health responses
-      if (message.toLowerCase().includes("anxiety") || message.toLowerCase().includes("anxious")) {
-        response = "Anxiety can be challenging to deal with. Some proven strategies include deep breathing exercises, progressive muscle relaxation, and cognitive reframing. Would you like me to guide you through a quick grounding technique?";
-      } else if (message.toLowerCase().includes("stress")) {
-        response = "Managing stress is important for your wellbeing. Consider trying the 5-5-5 technique: name 5 things you can see, 5 things you can hear, and 5 things you can feel. This can help bring you back to the present moment. What specific stressors are you facing?";
-      } else if (message.toLowerCase().includes("sad") || message.toLowerCase().includes("depress")) {
-        response = "I'm sorry to hear you're feeling down. It's important to reach out for support. Simple activities like taking a walk outside, connecting with friends, or practicing self-care can help improve your mood. Have you spoken with your university's counseling services?";
-      } else if (message.toLowerCase().includes("sleep")) {
-        response = "Good sleep is crucial for mental health. Try establishing a consistent sleep schedule, avoiding screens before bed, and creating a relaxing bedtime routine. The Sleep Foundation recommends 7-9 hours for most adults. Is there something specific affecting your sleep?";
-      } else {
-        response = "Taking care of your mental health is important. Remember that it's okay to prioritize self-care and seek support when needed. Would you like to talk about specific strategies for managing your mental wellbeing?";
-      }
-      break;
-    case "stress_management":
-      response = "When feeling overwhelmed, try the 5-5-5 technique: name 5 things you can see, 5 things you can hear, and 5 things you can feel. This can help ground you in the present moment. Other effective stress management techniques include mindful breathing, progressive muscle relaxation, and regular physical activity. What specific stressors are you facing?";
-      break;
-    default:
-      response = "I'm here to help with any questions you have about your academic journey, career planning, or personal wellbeing. What specific area would you like guidance on today?";
-  }
-  
-  return { text: response };
-};
-
-// Function for sentiment analysis
+// Sentiment Analysis function
 export const analyzeSentiment = async (text: string) => {
-  // This would normally call a sentiment analysis API
-  console.log("Analyzing sentiment:", text);
-  
-  // Simple mock implementation based on keywords
-  const lowerText = text.toLowerCase();
-  const positiveWords = ["happy", "excited", "grateful", "good", "great", "excellent", "fantastic", "better", "positive", "calm", "relaxed", "joy", "peaceful"];
-  const negativeWords = ["anxious", "worried", "stressed", "depressed", "sad", "unhappy", "hate", "angry", "overwhelmed", "tired", "exhausted", "lonely", "afraid", "fear", "panic", "anxiety", "hopeless"];
-  
-  let score = 0;
-  
-  // Check for positive words
-  for (const word of positiveWords) {
-    if (lowerText.includes(word)) score += 0.2;
-  }
-  
-  // Check for negative words
-  for (const word of negativeWords) {
-    if (lowerText.includes(word)) score -= 0.2;
-  }
-  
-  // Clamp score between -1 and 1
-  score = Math.max(-1, Math.min(1, score));
-  
-  let sentiment: "positive" | "negative" | "neutral";
-  
-  if (score > 0.1) {
-    sentiment = "positive";
-  } else if (score < -0.1) {
-    sentiment = "negative";
-  } else {
-    sentiment = "neutral";
-  }
-  
-  return { sentiment, score };
-};
+  try {
+    const response = await openai.completions.create({
+      model: "text-davinci-003",
+      prompt: `Analyze the sentiment of the following text and provide a sentiment label (positive, negative, or neutral) and a score between -1 and 1:\n\n${text}\n\nSentiment:`,
+      max_tokens: 50,
+      temperature: 0.5,
+    });
 
-// Function to get wellness resources based on sentiment and category
-export const getWellnessResources = async (sentiment: "positive" | "negative" | "neutral", category?: string) => {
-  // This would normally fetch from Supabase based on sentiment and category
-  // For now, return mock data
-  
-  const resources = {
-    negative: [
-      {
-        title: "Crisis Support Hotlines",
-        description: "Immediate support for mental health emergencies",
-        link: "/wellbeing#professional"
-      },
-      {
-        title: "Grounding Techniques",
-        description: "Quick exercises to manage overwhelming feelings",
-        link: "/wellbeing#activities"
-      },
-      {
-        title: "University Counseling Services",
-        description: "Professional support available to students",
-        link: "/wellbeing#professional"
-      }
-    ],
-    neutral: [
-      {
-        title: "Mindfulness Practices",
-        description: "Daily mindfulness exercises for mental wellbeing",
-        link: "/wellbeing#activities"
-      },
-      {
-        title: "Student Support Groups",
-        description: "Connect with peers facing similar challenges",
-        link: "/wellbeing#community"
-      },
-      {
-        title: "Wellness Self-Assessments",
-        description: "Understand your current mental health status",
-        link: "/wellbeing#resources"
-      }
-    ],
-    positive: [
-      {
-        title: "Gratitude Practices",
-        description: "Enhance positive emotions through gratitude",
-        link: "/wellbeing#activities"
-      },
-      {
-        title: "Wellness Challenges",
-        description: "Join community challenges to maintain wellbeing",
-        link: "/wellbeing#activities"
-      },
-      {
-        title: "Peer Support Network",
-        description: "Share your positivity with others who need support",
-        link: "/wellbeing#community"
-      }
-    ]
-  };
-  
-  return resources[sentiment];
+    const result = response.choices[0].text?.trim();
+    if (!result) {
+      throw new Error("Could not determine sentiment.");
+    }
+
+    const [sentiment, scoreStr] = result.split(",").map((s) => s.trim());
+    const score = parseFloat(scoreStr);
+
+    return {
+      sentiment: sentiment.toLowerCase(),
+      score,
+    };
+  } catch (error) {
+    console.error("Error analyzing sentiment:", error);
+    return {
+      sentiment: "neutral",
+      score: 0,
+    };
+  }
 };

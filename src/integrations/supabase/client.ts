@@ -21,7 +21,7 @@ const getRedirectUrl = () => {
   return `${window.location.origin}/auth/callback`;
 };
 
-// Create the Supabase client
+// Create the Supabase client with the correct configuration
 export const supabase = createClient<Database>(
   SUPABASE_URL,
   SUPABASE_ANON_KEY,
@@ -31,6 +31,7 @@ export const supabase = createClient<Database>(
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: true,
+      storage: typeof window !== 'undefined' ? localStorage : undefined,
     },
     global: {
       headers: {
@@ -40,17 +41,13 @@ export const supabase = createClient<Database>(
   }
 );
 
-// Set the redirect URL after client initialization
+// Initialize the session if we're in a browser context
 if (typeof window !== 'undefined') {
-  supabase.auth.setSession({
-    access_token: '',
-    refresh_token: '',
-  });
-  
-  supabase.auth.setSettings({
-    flowType: 'pkce',
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
+  // Set a default empty session (this is optional and might not be needed)
+  // The actual session will be managed by Supabase's auth module
+  supabase.auth.getSession().then(({ data }) => {
+    if (!data.session) {
+      console.log('No active session found');
+    }
   });
 }
