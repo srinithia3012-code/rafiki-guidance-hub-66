@@ -29,6 +29,8 @@ export default defineConfig(({ mode }) => ({
     sourcemap: mode === 'development',
     // Inline small assets
     assetsInlineLimit: 4096,
+    // Output directory
+    outDir: 'dist',
     // Customize the Rollup output
     rollupOptions: {
       output: {

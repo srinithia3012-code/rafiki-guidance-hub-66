@@ -35,6 +35,9 @@ function App() {
   const basename = "/rafiki-guidance-hub-66";
   
   useEffect(() => {
+    // For debugging
+    console.log("App mounted, basename:", basename);
+    
     const checkUser = async () => {
       try {
         const { data, error } = await supabase.auth.getSession();
