@@ -27,6 +27,11 @@ jobs:
           node-version: 20
           cache: 'npm'
       
+      - name: Print Env Vars for debugging
+        run: |
+          echo "PROJECT_ID: ${{ secrets.VITE_SUPABASE_URL }}"
+          echo "Has ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY != '' }}"
+      
       - name: Manually fix useChat.ts duplicated imports
         run: |
           # Completely recreate the file to ensure no duplicate imports
@@ -58,8 +63,7 @@ jobs:
               setInputValue, 
               isLoading, 
               handleSend, 
-              handleKeyDown,
-              sendInitialPrompt 
+              handleKeyDown
             } = useSendMessage(messages, setMessages, category, user, assessmentData, inputRef);
             
             const handleCategoryChange = (value: string) => {
@@ -149,11 +153,11 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_SUPABASE_URL: "https://mhbhyimkykyvuphbefwg.supabase.co"
+          VITE_SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1oYmh5aW1reWt5dnVwaGJlZndnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3NjE3MjEsImV4cCI6MjA1NzMzNzcyMX0.q42WQ2LzGfzxch1ghkMOoArCGNo0jxfiqOwY9SQsXnQ"
           VITE_USE_REAL_AI: true
-          VITE_API_URL: ${{ secrets.VITE_API_URL }}
-          VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL || '' }}
+          VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY || '' }}
       
       - name: Create netlify.toml
         run: |

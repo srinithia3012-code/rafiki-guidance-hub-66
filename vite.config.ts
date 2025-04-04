@@ -62,6 +62,14 @@ export default defineConfig(({ mode }) => ({
       transformMixedEsModules: true,
     },
   },
+  define: {
+    // Inject fallback environment variables for production builds
+    // This ensures the app doesn't crash if env variables are missing
+    ...(mode === 'production' && {
+      'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(process.env.VITE_SUPABASE_URL || 'https://mhbhyimkykyvuphbefwg.supabase.co'),
+      'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1oYmh5aW1reWt5dnVwaGJlZndnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3NjE3MjEsImV4cCI6MjA1NzMzNzcyMX0.q42WQ2LzGfzxch1ghkMOoArCGNo0jxfiqOwY9SQsXnQ'),
+    })
+  },
   optimizeDeps: {
     // Include dependencies that need optimization
     include: ['react', 'react-dom', 'react-router-dom'],
