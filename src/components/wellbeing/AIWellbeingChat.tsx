@@ -43,11 +43,11 @@ const AIWellbeingChat = ({ moodRating }: { moodRating?: number | null }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
-  const apiKey = typeof import.meta.env !== 'undefined' ? import.meta.env.VITE_GEMINI_API_KEY : '';
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   
   // Category is fixed to mental_health for wellbeing chat
   const category: GuidanceCategory = "mental_health";
-
+  
   // Send initial welcome message when component mounts
   useEffect(() => {
     if (user && messages.length === 0) {
@@ -116,7 +116,7 @@ const AIWellbeingChat = ({ moodRating }: { moodRating?: number | null }) => {
     messageHistory: Message[]
   ): Promise<string> => {
     if (!apiKey) {
-      return "I'm currently unable to process requests. Please try again later or contact support.";
+      throw new Error("Gemini API key not found. Please check your environment variables.");
     }
 
     // Convert messages to the format expected by Gemini API

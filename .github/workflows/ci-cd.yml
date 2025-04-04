@@ -1,4 +1,3 @@
-
 name: Deploy to GitHub Pages
 
 on:
@@ -28,50 +27,17 @@ jobs:
           node-version: 20
           cache: 'npm'
       
+      - name: Fix duplicate imports in useChat.ts
+        run: |
+          # Remove the duplicate import line (line 3)
+          sed -i '3d' src/hooks/chat/useChat.ts
+          echo "Fixed duplicate imports in useChat.ts"
+      
       - name: Install dependencies
         run: npm install
       
-      - name: Debug environment
-        run: |
-          echo "NODE_ENV: $NODE_ENV"
-          echo "Base path: /rafiki-guidance-hub-66/"
-          echo "Current directory: $(pwd)"
-          ls -la
-
       - name: Build
         run: npm run build
-        env:
-          VITE_SUPABASE_URL: "https://mhbhyimkykyvuphbefwg.supabase.co"
-          VITE_SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1oYmh5aW1reWt5dnVwaGJlZndnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3NjE3MjEsImV4cCI6MjA1NzMzNzcyMX0.q42WQ2LzGfzxch1ghkMOoArCGNo0jxfiqOwY9SQsXnQ"
-          VITE_USE_REAL_AI: "true"
-          VITE_API_URL: ${{ secrets.VITE_API_URL || '' }}
-          VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY || '' }}
-          VITE_GITHUB_ACTIONS: "true"
-          PUBLIC_URL: "/"
-      
-      - name: Debug build output
-        run: |
-          echo "Build output directory content:"
-          ls -la dist/
-          echo "index.html content:"
-          cat dist/index.html
-      
-      - name: Prepare for deployment
-        run: |
-          # Create 404.html file that redirects to index.html for SPA routing
-          cp dist/index.html dist/404.html
-          
-          # Fix paths in index.html if needed
-          sed -i 's|src="/assets|src="/rafiki-guidance-hub-66/assets|g' dist/index.html
-          sed -i 's|href="/assets|href="/rafiki-guidance-hub-66/assets|g' dist/index.html
-          sed -i 's|from "/src|from "/rafiki-guidance-hub-66/src|g' dist/index.html
-          sed -i 's|from "/assets|from "/rafiki-guidance-hub-66/assets|g' dist/index.html
-          
-          # Also update the 404.html file with the same changes
-          sed -i 's|src="/assets|src="/rafiki-guidance-hub-66/assets|g' dist/404.html
-          sed -i 's|href="/assets|href="/rafiki-guidance-hub-66/assets|g' dist/404.html
-          sed -i 's|from "/src|from "/rafiki-guidance-hub-66/src|g' dist/404.html
-          sed -i 's|from "/assets|from "/rafiki-guidance-hub-66/assets|g' dist/404.html
       
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -90,4 +56,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v4 

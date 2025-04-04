@@ -1,4 +1,3 @@
-
 import { useRef, useState } from "react";
 import { GuidanceCategory } from "@/services/ai";
 import { useAuthCheck } from "./useAuthCheck";
@@ -25,7 +24,8 @@ export function useChat(initialCategory: GuidanceCategory = "general") {
     setInputValue, 
     isLoading, 
     handleSend, 
-    handleKeyDown
+    handleKeyDown,
+    sendInitialPrompt 
   } = useSendMessage(messages, setMessages, category, user, assessmentData, inputRef);
   
   const handleCategoryChange = (value: string) => {
@@ -37,11 +37,13 @@ export function useChat(initialCategory: GuidanceCategory = "general") {
       
       // Clear existing messages
       clearMessages();
+      
+      // Reset hasInitialPromptBeenSent in useSendMessage by triggering a new message sequence
+      if (user) {
+        // The initial welcome message will be added by useMessages effect
+        // sendInitialPrompt will be triggered by useSendMessage effect when messages.length === 1
+      }
     }
-  };
-
-  const clearChat = () => {
-    clearMessages();
   };
 
   return {
@@ -57,7 +59,7 @@ export function useChat(initialCategory: GuidanceCategory = "general") {
     handleSend,
     handleKeyDown,
     handleCategoryChange,
-    clearChat,
+    clearChat: clearMessages,
     assessmentData,
   };
 }

@@ -1,4 +1,5 @@
-import React, { memo } from 'react';
+
+import React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Bot, Check, CircleHelp, User } from "lucide-react";
 import { Message } from "@/types/chat";
@@ -7,51 +8,59 @@ interface MessageItemProps {
   message: Message;
 }
 
-// Component for displaying a single chat message
 const MessageItem: React.FC<MessageItemProps> = ({ message }) => {
-  const isAI = message.sender === 'ai';
-  
-  // Format timestamp to readable time
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
+  const isAI = message.sender === "ai";
   
   return (
-    <div className={`flex items-start gap-3 mb-4 ${isAI ? '' : 'flex-row-reverse'}`}>
-      {/* Avatar */}
-      <Avatar className={`h-8 w-8 ${isAI ? 'bg-primary/10' : 'bg-gray-200'}`}>
-        {isAI ? (
-          <>
-            <AvatarImage src="/icons/logo-small.png" alt="Rafiki AI" />
-            <AvatarFallback className="text-primary text-xs">AI</AvatarFallback>
-          </>
-        ) : (
-          <>
-            <AvatarFallback className="text-gray-700 text-xs">U</AvatarFallback>
-          </>
+    <div className={`flex ${isAI ? "justify-start" : "justify-end"}`}>
+      <div className="flex max-w-[85%] md:max-w-[70%]">
+        {isAI && (
+          <Avatar className="h-8 w-8 md:h-9 md:w-9 mr-2 mt-1 flex-shrink-0">
+            <AvatarFallback className="bg-rafiki-100 text-rafiki-700">
+              <Bot className="h-3 w-3 md:h-4 md:w-4" />
+            </AvatarFallback>
+          </Avatar>
         )}
-      </Avatar>
-      
-      {/* Message content */}
-      <div className={`max-w-[85%] ${isAI ? 'text-left' : 'text-right'}`}>
-        <div className={`p-3 rounded-lg ${
-          isAI 
-            ? 'bg-gray-100 text-gray-800 rounded-tl-none' 
-            : 'bg-primary text-white rounded-tr-none'
-        }`}>
-          <div className="text-sm whitespace-pre-wrap">{message.content}</div>
+        
+        <div
+          className={`rounded-2xl p-3 md:p-4 ${
+            isAI
+              ? "bg-gray-100 text-gray-800 rounded-tl-none"
+              : "bg-rafiki-600 text-white rounded-tr-none"
+          }`}
+        >
+          <div className="text-xs md:text-sm whitespace-pre-wrap">{message.content}</div>
+          <div className="mt-1 flex justify-end items-center">
+            <span className="text-xs opacity-60">
+              {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+            </span>
+            {!isAI && message.sentiment && (
+              <div className="ml-1.5">
+                {message.sentiment === "positive" && (
+                  <div className="bg-green-100 text-green-800 text-xs rounded-full px-1.5 py-0.5">
+                    <Check className="h-3 w-3 inline-block" />
+                  </div>
+                )}
+                {message.sentiment === "negative" && (
+                  <div className="bg-red-100 text-red-800 text-xs rounded-full px-1.5 py-0.5">
+                    <CircleHelp className="h-3 w-3 inline-block" />
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
-        <div className="text-xs text-gray-500 mt-1">
-          {formatTime(new Date(message.timestamp))}
-        </div>
+        
+        {!isAI && (
+          <Avatar className="h-8 w-8 md:h-9 md:w-9 ml-2 mt-1 flex-shrink-0">
+            <AvatarFallback className="bg-gray-200">
+              <User className="h-3 w-3 md:h-4 md:w-4" />
+            </AvatarFallback>
+          </Avatar>
+        )}
       </div>
     </div>
   );
 };
 
-// Use React.memo to prevent unnecessary re-renders
-export default memo(MessageItem, (prevProps, nextProps) => {
-  // Only re-render if the message ID changes
-  return prevProps.message.id === nextProps.message.id && 
-         prevProps.message.content === nextProps.message.content;
-});
+export default MessageItem;
