@@ -42,7 +42,7 @@ const ChatV2Page: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { user, isCheckingAuth } = useAuth();
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  const apiKey = typeof import.meta.env !== 'undefined' ? import.meta.env.VITE_GEMINI_API_KEY : '';
 
   // Send initial welcome message when component mounts
   useEffect(() => {
@@ -108,7 +108,7 @@ const ChatV2Page: React.FC = () => {
     specificCategory?: GuidanceCategory
   ): Promise<string> => {
     if (!apiKey) {
-      throw new Error("Gemini API key not found. Please check your environment variables.");
+      return "I'm currently unable to process requests. Please try again later or contact support.";
     }
 
     // Use provided category or fall back to the current state
