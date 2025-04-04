@@ -28,7 +28,7 @@ jobs:
           cache: 'npm'
       
       - name: Install dependencies
-        run: npm ci
+        run: npm install
       
       - name: Create SPA redirects for GitHub Pages
         run: |
@@ -44,19 +44,10 @@ jobs:
                 // https://github.com/rafgraph/spa-github-pages
                 // This script takes the current url and converts the path and query
                 // string into just a query string, and then redirects the browser
-                // to the new url with only a query string and hash fragment,
-                // e.g. https://www.foo.tld/one/two?a=b&c=d#qwe, becomes
-                // https://www.foo.tld/?/one/two&a=b~and~c=d#qwe
-                // Note: this 404.html file must be at least 512 bytes for it to work
-                // with Internet Explorer (it is currently > 512 bytes)
+                // to the new url with only a query string and hash fragment.
 
                 // If you're creating a Project Pages site and NOT using a custom domain,
                 // then set pathSegmentsToKeep to 1 (enterprise users may need to set it to > 1).
-                // This way the code will only replace the route part of the path, and not
-                // the real directory in which the app resides, for example:
-                // https://username.github.io/repo-name/one/two?a=b&c=d#qwe becomes
-                // https://username.github.io/repo-name/?/one/two&a=b~and~c=d#qwe
-                // Otherwise, leave pathSegmentsToKeep as 0.
                 var pathSegmentsToKeep = 1;
 
                 var l = window.location;
@@ -67,13 +58,27 @@ jobs:
                   (l.search ? "&" + l.search.slice(1).replace(/&/g, "~and~") : "") +
                   l.hash
                 );
-
               </script>
             </head>
             <body>
             </body>
           </html>' > public/404.html
           echo '/* /index.html 200' > public/_redirects
+          
+          # Create redirect-script.js for index.html
+          echo '// Single Page Apps for GitHub Pages
+          // MIT License
+          // https://github.com/rafgraph/spa-github-pages
+          (function(l) {
+            if (l.search[1] === "/") {
+              var decoded = l.search.slice(1).split("&").map(function(s) { 
+                return s.replace(/~and~/g, "&")
+              }).join("?");
+              window.history.replaceState(null, null,
+                l.pathname.slice(0, -1) + decoded + l.hash
+              );
+            }
+          }(window.location))' > public/redirect-script.js
       
       - name: Manually fix useChat.ts duplicated imports
         run: |
@@ -144,6 +149,44 @@ jobs:
           EOF
           echo "Fixed useChat.ts file"
       
+      - name: Verify vite.config.ts has correct base path
+        run: |
+          # Check if vite.config.ts exists and contains the base path
+          if grep -q "base.*rafiki-guidance-hub-66" vite.config.ts; then
+            echo "✅ vite.config.ts has correct base path"
+          else
+            echo "⚠️ Updating vite.config.ts with correct base path"
+            # Create a temporary file with the correct base path
+            cat > vite.config.ts.tmp << 'EOF'
+          import { defineConfig } from "vite";
+          import react from "@vitejs/plugin-react-swc";
+          import path from "path";
+          import { componentTagger } from "lovable-tagger";
+
+          // https://vitejs.dev/config/
+          export default defineConfig(({ mode }) => ({
+            // Use base path for GitHub Pages
+            base: mode === 'production' ? "/rafiki-guidance-hub-66/" : "/",
+            server: {
+              host: "::",
+              port: 8080,
+            },
+            plugins: [
+              react(),
+              mode === 'development' &&
+              componentTagger(),
+            ].filter(Boolean),
+            resolve: {
+              alias: {
+                "@": path.resolve(__dirname, "./src"),
+              },
+            },
+          }));
+          EOF
+            # Replace the original file with the temporary one
+            mv vite.config.ts.tmp vite.config.ts
+          fi
+      
       - name: Build
         run: npm run build
         env:
@@ -152,6 +195,14 @@ jobs:
           VITE_USE_REAL_AI: true
           VITE_API_URL: ${{ secrets.VITE_API_URL || '' }}
           VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY || '' }}
+      
+      - name: Add SPA routing script to index.html
+        run: |
+          # Copy the redirect script to the dist folder
+          cp public/redirect-script.js dist/
+          
+          # Add the script tag to index.html
+          sed -i 's/<head>/<head>\n    <script type="text\/javascript" src="\/rafiki-guidance-hub-66\/redirect-script.js"><\/script>/' dist/index.html
       
       - name: Create netlify.toml
         run: |
@@ -176,6 +227,15 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: './dist'
+          
+      - name: Cache dist folder
+        uses: actions/cache@v3
+        with:
+          path: |
+            ./dist
+          key: ${{ runner.os }}-dist-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-dist-
 
   deploy:
     environment:

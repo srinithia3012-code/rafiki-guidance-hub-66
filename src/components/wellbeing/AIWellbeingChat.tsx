@@ -381,48 +381,48 @@ const AIWellbeingChat = ({ moodRating }: { moodRating?: number | null }) => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {messages.map((message) => (
-                    <div key={message.id} className={`mb-4 flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[80%] rounded-lg p-3 ${
-                        message.sender === 'user' 
-                          ? 'bg-primary text-white rounded-tr-none' 
-                          : 'bg-gray-100 rounded-tl-none'
-                      }`}>
-                        {message.sender === 'ai' && (
-                          <div className="flex items-center mb-1">
-                            <Heart className="h-4 w-4 text-rose-500 mr-1" />
-                            <span className="text-xs font-medium text-rose-500">Rafiki</span>
-                            <span className="text-xs text-gray-500 ml-2">
-                              {new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                            </span>
-                          </div>
-                        )}
-                        <div className={`text-sm ${message.sender === 'user' ? 'text-white' : 'text-gray-800'}`}>
-                          {message.content}
-                        </div>
-                        {message.sender === 'user' && (
-                          <div className="flex justify-end mt-1">
-                            <span className="text-xs text-white/70">
-                              {new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                            </span>
-                          </div>
-                        )}
+              {messages.map((message) => (
+                <div key={message.id} className={`mb-4 flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[80%] rounded-lg p-3 ${
+                    message.sender === 'user' 
+                      ? 'bg-primary text-white rounded-tr-none' 
+                      : 'bg-gray-100 rounded-tl-none'
+                  }`}>
+                    {message.sender === 'ai' && (
+                      <div className="flex items-center mb-1">
+                        <Heart className="h-4 w-4 text-rose-500 mr-1" />
+                        <span className="text-xs font-medium text-rose-500">Rafiki</span>
+                        <span className="text-xs text-gray-500 ml-2">
+                          {new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        </span>
                       </div>
+                    )}
+                    <div className={`text-sm ${message.sender === 'user' ? 'text-white' : 'text-gray-800'}`}>
+                      {message.content}
                     </div>
-                  ))}
-                  {isLoading && (
-                    <div className="flex justify-start mb-4">
-                      <div className="bg-gray-100 rounded-lg rounded-tl-none p-3 max-w-[80%]">
-                        <div className="flex items-center mb-1">
-                          <Heart className="h-4 w-4 text-rose-500 mr-1" />
-                          <span className="text-xs font-medium text-rose-500">Rafiki</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                        </div>
+                    {message.sender === 'user' && (
+                      <div className="flex justify-end mt-1">
+                        <span className="text-xs text-white/70">
+                          {new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        </span>
                       </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {isLoading && (
+                <div className="flex justify-start mb-4">
+                  <div className="bg-gray-100 rounded-lg rounded-tl-none p-3 max-w-[80%]">
+                    <div className="flex items-center mb-1">
+                      <Heart className="h-4 w-4 text-rose-500 mr-1" />
+                      <span className="text-xs font-medium text-rose-500">Rafiki</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    </div>
+                  </div>
                     </div>
                   )}
                 </div>
