@@ -11,11 +11,14 @@ console.log('Supabase URL:', SUPABASE_URL);
 console.log('Using environment variables:', !!import.meta.env.VITE_SUPABASE_URL);
 console.log('Environment mode:', import.meta.env.MODE);
 console.log('Base URL:', import.meta.env.BASE_URL);
+console.log('Is GitHub Actions:', import.meta.env.VITE_GITHUB_ACTIONS);
+console.log('Public URL:', import.meta.env.PUBLIC_URL);
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   console.error("Missing Supabase credentials. Using hardcoded fallbacks.");
 }
 
+// Create the Supabase client with the appropriate configuration for the environment
 export const supabase = createClient<Database>(
   SUPABASE_URL,
   SUPABASE_ANON_KEY,
@@ -24,7 +27,11 @@ export const supabase = createClient<Database>(
       flowType: 'pkce',
       autoRefreshToken: true,
       persistSession: true,
-      detectSessionInUrl: true
+      detectSessionInUrl: true,
+      // Configure the redirect URL for GitHub Pages deployment
+      ...(import.meta.env.MODE === 'production' && import.meta.env.VITE_GITHUB_ACTIONS === 'true' && {
+        redirectTo: window.location.origin + '/rafiki-guidance-hub-66/auth/callback'
+      })
     }
   }
 );

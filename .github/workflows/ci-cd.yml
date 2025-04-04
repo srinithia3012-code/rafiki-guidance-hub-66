@@ -1,3 +1,4 @@
+
 name: Deploy to GitHub Pages
 
 on:
@@ -27,9 +28,6 @@ jobs:
           node-version: 20
           cache: 'npm'
       
-      - name: Delete package-lock.json to force regeneration
-        run: rm -f package-lock.json
-      
       - name: Install dependencies
         run: npm install
       
@@ -49,6 +47,7 @@ jobs:
           VITE_API_URL: ${{ secrets.VITE_API_URL || '' }}
           VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY || '' }}
           VITE_GITHUB_ACTIONS: "true"
+          PUBLIC_URL: "/rafiki-guidance-hub-66"
       
       - name: Debug build output
         run: |
@@ -63,12 +62,16 @@ jobs:
           cp dist/index.html dist/404.html
           
           # Fix paths in index.html if needed
-          sed -i 's|src="/|src="/rafiki-guidance-hub-66/|g' dist/index.html
-          sed -i 's|href="/|href="/rafiki-guidance-hub-66/|g' dist/index.html
+          sed -i 's|src="/assets|src="/rafiki-guidance-hub-66/assets|g' dist/index.html
+          sed -i 's|href="/assets|href="/rafiki-guidance-hub-66/assets|g' dist/index.html
+          sed -i 's|from "/src|from "/rafiki-guidance-hub-66/src|g' dist/index.html
+          sed -i 's|from "/assets|from "/rafiki-guidance-hub-66/assets|g' dist/index.html
           
-          # Exclude paths that already have the prefix
-          sed -i 's|href="/rafiki-guidance-hub-66/rafiki-guidance-hub-66/|href="/rafiki-guidance-hub-66/|g' dist/index.html
-          sed -i 's|src="/rafiki-guidance-hub-66/rafiki-guidance-hub-66/|src="/rafiki-guidance-hub-66/|g' dist/index.html
+          # Also update the 404.html file with the same changes
+          sed -i 's|src="/assets|src="/rafiki-guidance-hub-66/assets|g' dist/404.html
+          sed -i 's|href="/assets|href="/rafiki-guidance-hub-66/assets|g' dist/404.html
+          sed -i 's|from "/src|from "/rafiki-guidance-hub-66/src|g' dist/404.html
+          sed -i 's|from "/assets|from "/rafiki-guidance-hub-66/assets|g' dist/404.html
       
       - name: Setup Pages
         uses: actions/configure-pages@v4

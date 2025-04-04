@@ -1,3 +1,4 @@
+
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
@@ -70,6 +71,7 @@ export default defineConfig(({ mode }) => ({
       'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(process.env.VITE_SUPABASE_URL || "https://mhbhyimkykyvuphbefwg.supabase.co"),
       'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(process.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1oYmh5aW1reWt5dnVwaGJlZndnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3NjE3MjEsImV4cCI6MjA1NzMzNzcyMX0.q42WQ2LzGfzxch1ghkMOoArCGNo0jxfiqOwY9SQsXnQ"),
       'import.meta.env.VITE_USE_REAL_AI': JSON.stringify(process.env.VITE_USE_REAL_AI || "true"),
+      'import.meta.env.BASE_URL': JSON.stringify(process.env.PUBLIC_URL || "/rafiki-guidance-hub-66/"),
     })
   },
   optimizeDeps: {

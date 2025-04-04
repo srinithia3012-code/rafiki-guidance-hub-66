@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from 'sonner';
 import { useEffect, useState, Suspense, lazy } from "react";
@@ -30,10 +31,17 @@ function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Get basename for router
+  const isProduction = import.meta.env.MODE === 'production';
+  const isGitHubActions = import.meta.env.VITE_GITHUB_ACTIONS === 'true';
+  
+  // For debugging
+  console.log("Environment mode:", import.meta.env.MODE);
+  console.log("Is GitHub Actions:", import.meta.env.VITE_GITHUB_ACTIONS);
+  console.log("Base URL from env:", import.meta.env.BASE_URL);
+  
   // Make basename conditional to match vite.config.ts
-  const basename = import.meta.env.MODE === 'production' && import.meta.env.VITE_GITHUB_ACTIONS === 'true' 
-    ? "/rafiki-guidance-hub-66" 
-    : "";
+  const basename = isProduction && isGitHubActions ? "/rafiki-guidance-hub-66" : "";
   
   useEffect(() => {
     // For debugging
@@ -68,7 +76,7 @@ function App() {
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, []);
+  }, [basename]);
 
   // Prefetch main pages for faster navigation after initial load
   useEffect(() => {
