@@ -52,14 +52,6 @@ jobs:
             // Messages handling
             const { messages, setMessages, messagesEndRef, clearMessages } = useMessages(category, assessmentData);
             
-            // Chat history persistence
-            const { clearPersistedMessages } = useMessagePersistence(
-              messages,
-              setMessages,
-              category,
-              user?.id || null
-            );
-            
             // Message sending
             const { 
               inputValue, 
@@ -79,18 +71,11 @@ jobs:
                 
                 // Clear existing messages
                 clearMessages();
-                
-                // Reset hasInitialPromptBeenSent in useSendMessage by triggering a new message sequence
-                if (user) {
-                  // The initial welcome message will be added by useMessages effect
-                  // sendInitialPrompt will be triggered by useSendMessage effect when messages.length === 1
-                }
               }
             };
           
             const clearChat = () => {
               clearMessages();
-              clearPersistedMessages();
             };
           
             return {
