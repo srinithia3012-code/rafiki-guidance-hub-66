@@ -1,3 +1,4 @@
+
 import { useRef, useState } from "react";
 import { GuidanceCategory } from "@/services/ai";
 import { useAuthCheck } from "./useAuthCheck";

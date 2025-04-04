@@ -1,4 +1,5 @@
-import { HashRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from 'sonner';
 import { useEffect, useState, lazy, Suspense } from "react";
 import Navbar from "@/components/Navbar";
@@ -64,7 +65,6 @@ function App() {
     <Router>
       <Toaster position="top-center" />
       <div className="min-h-screen flex flex-col">
-        <Navbar />
         <main className="flex-grow">
           <Suspense fallback={<LoadingSpinner />}>
             <Routes>
