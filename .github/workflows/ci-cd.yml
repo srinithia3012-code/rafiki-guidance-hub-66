@@ -30,10 +30,13 @@ jobs:
       - name: Install dependencies
         run: npm install
       
-      - name: Create SPA redirects for GitHub Pages
+      - name: Create SPA redirect files
         run: |
           mkdir -p public
-          echo '<!DOCTYPE html>
+          
+          # Create 404.html file
+          cat > public/404.html << 'EOF'
+          <!DOCTYPE html>
           <html>
             <head>
               <meta charset="utf-8">
@@ -46,7 +49,7 @@ jobs:
                 // string into just a query string, and then redirects the browser
                 // to the new url with only a query string and hash fragment.
 
-                // If you're creating a Project Pages site and NOT using a custom domain,
+                // If you are creating a Project Pages site and NOT using a custom domain,
                 // then set pathSegmentsToKeep to 1 (enterprise users may need to set it to > 1).
                 var pathSegmentsToKeep = 1;
 
@@ -62,11 +65,15 @@ jobs:
             </head>
             <body>
             </body>
-          </html>' > public/404.html
+          </html>
+          EOF
+          
+          # Create _redirects file for Netlify
           echo '/* /index.html 200' > public/_redirects
           
           # Create redirect-script.js for index.html
-          echo '// Single Page Apps for GitHub Pages
+          cat > public/redirect-script.js << 'EOF'
+          // Single Page Apps for GitHub Pages
           // MIT License
           // https://github.com/rafgraph/spa-github-pages
           (function(l) {
@@ -78,7 +85,8 @@ jobs:
                 l.pathname.slice(0, -1) + decoded + l.hash
               );
             }
-          }(window.location))' > public/redirect-script.js
+          }(window.location))
+          EOF
       
       - name: Manually fix useChat.ts duplicated imports
         run: |
@@ -192,7 +200,7 @@ jobs:
         env:
           VITE_SUPABASE_URL: "https://mhbhyimkykyvuphbefwg.supabase.co"
           VITE_SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1oYmh5aW1reWt5dnVwaGJlZndnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3NjE3MjEsImV4cCI6MjA1NzMzNzcyMX0.q42WQ2LzGfzxch1ghkMOoArCGNo0jxfiqOwY9SQsXnQ"
-          VITE_USE_REAL_AI: true
+          VITE_USE_REAL_AI: "true"
           VITE_API_URL: ${{ secrets.VITE_API_URL || '' }}
           VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY || '' }}
       
@@ -206,7 +214,7 @@ jobs:
       
       - name: Create netlify.toml
         run: |
-          cat > netlify.toml << EOF
+          cat > netlify.toml << 'EOF'
           [build]
             publish = "dist"
             command = "npm run build"
