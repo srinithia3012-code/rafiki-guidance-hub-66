@@ -1,4 +1,3 @@
-
 import { useRef, useState, useEffect } from "react";
 import { GuidanceCategory } from "@/services/ai";
 import { toast } from "sonner";
@@ -110,16 +109,15 @@ export function useSimpleChat(initialCategory: GuidanceCategory = "general") {
       console.error("Error getting chat response:", error);
       
       // Fallback response
-      const fallbackMessage: Message = {
+      const aiErrorMessage: Message = {
         id: (Date.now() + 1).toString(),
         content: "I'm here to help with your questions. What would you like to know more about?",
         sender: "ai",
         timestamp: new Date(),
         category,
-        fallback: true,
       };
       
-      setMessages(prev => [...prev, fallbackMessage]);
+      setMessages(prev => [...prev, aiErrorMessage]);
       toast.error("Could not connect to the server. Using offline mode.");
     } finally {
       setIsLoading(false);

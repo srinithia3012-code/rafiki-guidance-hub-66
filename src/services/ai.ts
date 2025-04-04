@@ -37,10 +37,6 @@ export const sendMessageToAI = async (
         // Add the Authorization header explicitly
         'Authorization': `Bearer ${accessToken}`,
       },
-      options: {
-        retry: 3,
-        timeout: 15000 // 15 seconds timeout
-      }
     });
 
     // Log the full response for debugging

@@ -5,7 +5,6 @@ import { useAuthCheck } from "./useAuthCheck";
 import { useAssessmentData } from "./useAssessmentData";
 import { useMessages } from "./useMessages";
 import { useSendMessage } from "./useSendMessage";
-import { useMessagePersistence } from "@/hooks/useMessagePersistence";
 
 export function useChat(initialCategory: GuidanceCategory = "general") {
   const [category, setCategory] = useState<GuidanceCategory>(initialCategory);
@@ -27,7 +26,6 @@ export function useChat(initialCategory: GuidanceCategory = "general") {
     isLoading, 
     handleSend, 
     handleKeyDown
-    // Remove reference to sendInitialPrompt which doesn't exist
   } = useSendMessage(messages, setMessages, category, user, assessmentData, inputRef);
   
   const handleCategoryChange = (value: string) => {

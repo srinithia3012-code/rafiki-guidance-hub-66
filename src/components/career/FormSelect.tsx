@@ -1,3 +1,4 @@
+
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import {
   Select,
@@ -6,11 +7,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UseFormReturn, FieldValues } from "react-hook-form";
+import { UseFormReturn, FieldValues, Path } from "react-hook-form";
 
 interface FormSelectProps<TFieldValues extends FieldValues = FieldValues> {
   form: UseFormReturn<TFieldValues>;
-  name: keyof TFieldValues | string;
+  name: Path<TFieldValues>;
   label: string;
   placeholder?: string;
   options: string[];
