@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from 'sonner';
 import { useEffect, useState, Suspense, lazy } from "react";
@@ -31,8 +30,10 @@ function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Use the correct basename for GitHub Pages
-  const basename = "/rafiki-guidance-hub-66";
+  // Make basename conditional to match vite.config.ts
+  const basename = import.meta.env.MODE === 'production' && import.meta.env.VITE_GITHUB_ACTIONS === 'true' 
+    ? "/rafiki-guidance-hub-66" 
+    : "";
   
   useEffect(() => {
     const checkUser = async () => {
