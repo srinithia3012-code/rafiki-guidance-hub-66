@@ -1,3 +1,4 @@
+
 import OpenAI from 'openai';
 
 // Define types for messages
@@ -39,7 +40,7 @@ export const sendMessageToAI = async (message: string, category: GuidanceCategor
       
       try {
         const response = await fetch(endpoint, { 
-          signal: controller.signal as any
+          signal: controller.signal
         });
         
         if (!response.ok) {
@@ -106,5 +107,41 @@ export const analyzeSentiment = async (text: string) => {
       sentiment: "neutral",
       score: 0,
     };
+  }
+};
+
+// New function to get wellness resources based on sentiment
+export const getWellnessResources = async (sentiment: string) => {
+  // This is a mock function that returns resources based on sentiment
+  // In a real application, this would fetch from a database or API
+  
+  const positiveResources = [
+    { title: "Maintaining Positive Mental Health", link: "/resources/positive-mental-health" },
+    { title: "Gratitude Practices", link: "/resources/gratitude" },
+    { title: "Mindfulness for Daily Life", link: "/resources/mindfulness" }
+  ];
+  
+  const neutralResources = [
+    { title: "Stress Management Techniques", link: "/resources/stress-management" },
+    { title: "Understanding Your Emotions", link: "/resources/emotional-awareness" },
+    { title: "Building Resilience", link: "/resources/resilience" }
+  ];
+  
+  const negativeResources = [
+    { title: "Coping with Difficult Emotions", link: "/resources/coping-strategies" },
+    { title: "Self-Care During Hard Times", link: "/resources/self-care" },
+    { title: "When to Seek Professional Help", link: "/resources/professional-help" },
+    { title: "Crisis Support Resources", link: "/resources/crisis-support" }
+  ];
+  
+  switch (sentiment) {
+    case "positive":
+      return positiveResources;
+    case "neutral":
+      return neutralResources;
+    case "negative":
+      return negativeResources;
+    default:
+      return neutralResources;
   }
 };

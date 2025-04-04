@@ -43,8 +43,7 @@ export const supabase = createClient<Database>(
 
 // Initialize the session if we're in a browser context
 if (typeof window !== 'undefined') {
-  // Set a default empty session (this is optional and might not be needed)
-  // The actual session will be managed by Supabase's auth module
+  // Get the current session - no longer using the deprecated setSettings method
   supabase.auth.getSession().then(({ data }) => {
     if (!data.session) {
       console.log('No active session found');

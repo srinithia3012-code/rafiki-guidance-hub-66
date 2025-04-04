@@ -7,6 +7,7 @@ export const getCategoryWelcomeMessage = (category: GuidanceCategory): string =>
     academic: "Hello! I'm Rafiki, your AI academic advisor. I can help with study strategies, course selections, research skills, and academic planning. How can I assist with your academic journey today?",
     mental_health: "Hi, I'm Rafiki, your AI wellbeing assistant. I'm here to provide support for emotional challenges, stress, and mental wellness. Remember, while I can offer guidance, I'm not a replacement for professional mental health services. How are you feeling today?",
     stress_management: "Hello! I'm Rafiki, your AI stress management coach. I can suggest techniques for managing academic pressure, anxiety, and building resilience. What's causing you stress right now?",
+    wellbeing: "Hi there! I'm Rafiki, your AI wellbeing guide. I can help with mental health resources, stress management, and developing healthy habits for overall wellbeing. What aspect of your wellbeing would you like to focus on today?",
     general: "Hello! I'm Rafiki, your AI guidance counselor. I'm here to help with academics, career planning, and personal wellbeing. What would you like guidance on today?",
   };
   return welcomeMessages[category];
