@@ -5,6 +5,7 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  base: "./", // Set base to relative path for GitHub Pages
   server: {
     host: "::",
     port: 8080,
@@ -18,5 +19,25 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+  },
+  build: {
+    // Improve build performance
+    target: 'es2015',
+    minify: 'terser',
+    cssMinify: true,
+    // Enable code splitting
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          ui: ['@/components/ui'],
+        },
+      },
+    },
+    // Reduce chunk size warnings
+    chunkSizeWarningLimit: 1000,
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-router-dom'],
   },
 }));
