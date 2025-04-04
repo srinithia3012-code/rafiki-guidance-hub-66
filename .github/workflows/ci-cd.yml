@@ -47,7 +47,7 @@ jobs:
           VITE_API_URL: ${{ secrets.VITE_API_URL || '' }}
           VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY || '' }}
           VITE_GITHUB_ACTIONS: "true"
-          PUBLIC_URL: "/rafiki-guidance-hub-66"
+          PUBLIC_URL: "/"
       
       - name: Debug build output
         run: |
