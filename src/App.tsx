@@ -31,18 +31,22 @@ function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Always use the same basename for GitHub Pages
+  // Use the correct basename for GitHub Pages
   const basename = "/rafiki-guidance-hub-66";
-
+  
   useEffect(() => {
     const checkUser = async () => {
-      const { data, error } = await supabase.auth.getSession();
-      
-      if (!error && data.session) {
-        setUser(data.session.user);
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (!error && data.session) {
+          setUser(data.session.user);
+        }
+      } catch (err) {
+        console.error("Error checking user session:", err);
+      } finally {
+        setLoading(false);
       }
-      
-      setLoading(false);
     };
 
     checkUser();
