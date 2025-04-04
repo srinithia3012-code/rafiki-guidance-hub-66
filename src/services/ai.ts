@@ -37,27 +37,27 @@ export const sendMessageToAI = async (
     
     while (attempts < maxAttempts) {
       try {
-        // Add timeout using AbortController
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        // Use timeout in a different way
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Request timed out")), 15000)
+        );
         
-        const response = await supabase.functions.invoke("gemini-chat", {
+        const functionPromise = supabase.functions.invoke("gemini-chat", {
           body: { message, category, chatHistory: history },
           headers: {
             'Content-Type': 'application/json',
             // Add the Authorization header explicitly
             'Authorization': `Bearer ${accessToken}`,
-          },
-          // Using signal for timeout instead of options.timeout
-          signal: controller.signal
+          }
         });
         
-        clearTimeout(timeoutId);
+        // Race between the function call and timeout
+        const response = await Promise.race([functionPromise, timeoutPromise]);
         
         // Log the full response for debugging
         console.log('Supabase Function Response:', response);
 
-        if (response.error) {
+        if ('error' in response) {
           console.error("Error details:", response.error);
           throw new Error(response.error.message || "Unknown error");
         }

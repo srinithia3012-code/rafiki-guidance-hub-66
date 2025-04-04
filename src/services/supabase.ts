@@ -82,7 +82,7 @@ export const getUserProfile = async (userId: string) => {
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
-    .eq('id', userId)
+    .eq('id', userId as any)
     .single();
     
   if (error) {
@@ -97,7 +97,7 @@ export const updateUserProfile = async (userId: string, updates: any) => {
   const { data, error } = await supabase
     .from('profiles')
     .update(updates)
-    .eq('id', userId);
+    .eq('id', userId as any);
     
   if (error) throw error;
   return data;

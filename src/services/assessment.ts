@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Assessment, AssessmentQuestion, AssessmentResult } from "@/types/assessment";
 import { toast } from "sonner";
@@ -470,50 +469,58 @@ export const saveAssessmentResult = async (result: AssessmentResult): Promise<bo
   try {
     const { error } = await supabase
       .from('assessment_results')
-      .insert(result);
+      .insert({
+        user_id: result.user_id,
+        assessment_id: result.assessment_id,
+        assessment_type: result.assessment_type,
+        answers: result.answers,
+        score: result.score,
+        completed_at: result.completed_at,
+      });
     
     if (error) {
       console.error("Error saving assessment result:", error);
-      toast.error("Failed to save assessment result");
+      toast.error("Failed to save assessment results");
       return false;
     }
     
+    toast.success("Assessment completed successfully!");
     return true;
-  } catch (err) {
-    console.error("Exception saving assessment result:", err);
-    toast.error("An error occurred while saving your assessment");
+  } catch (error) {
+    console.error("Error saving assessment result:", error);
+    toast.error("Failed to save assessment results");
     return false;
   }
 };
 
 // Get all assessment results for a user
-export const getUserAssessmentResults = async (userId: string): Promise<AssessmentResult[]> => {
+export const getUserAssessmentResults = async (userId: string) => {
   try {
     const { data, error } = await supabase
       .from('assessment_results')
       .select('*')
-      .eq('user_id', userId)
+      .eq('user_id', userId as any)
       .order('completed_at', { ascending: false });
     
     if (error) {
       console.error("Error fetching assessment results:", error);
-      throw error;
+      return [];
     }
     
-    return data as AssessmentResult[];
-  } catch (err) {
-    console.error("Exception fetching assessment results:", err);
+    return data as unknown as AssessmentResult[];
+  } catch (error) {
+    console.error("Error fetching assessment results:", error);
     return [];
   }
 };
 
-// Get a specific assessment result
-export const getAssessmentResult = async (resultId: string): Promise<AssessmentResult | null> => {
+// Get specific assessment result by ID
+export const getAssessmentResultById = async (resultId: string) => {
   try {
     const { data, error } = await supabase
       .from('assessment_results')
       .select('*')
-      .eq('id', resultId)
+      .eq('id', resultId as any)
       .single();
     
     if (error) {
@@ -521,40 +528,35 @@ export const getAssessmentResult = async (resultId: string): Promise<AssessmentR
       return null;
     }
     
-    return data as AssessmentResult;
-  } catch (err) {
-    console.error("Exception fetching assessment result:", err);
+    return data as unknown as AssessmentResult;
+  } catch (error) {
+    console.error("Error fetching assessment result:", error);
     return null;
   }
 };
 
-// Get the latest assessment result of a specific type for a user
-export const getLatestAssessmentByType = async (
-  userId: string, 
-  assessmentType: string
-): Promise<AssessmentResult | null> => {
+// Get the latest assessment result for a specific type
+export const getLatestAssessmentByType = async (userId: string, assessmentType: string) => {
   try {
     const { data, error } = await supabase
       .from('assessment_results')
       .select('*')
-      .eq('user_id', userId)
-      .eq('assessment_type', assessmentType)
+      .eq('user_id', userId as any)
+      .eq('assessment_type', assessmentType as any)
       .order('completed_at', { ascending: false })
       .limit(1)
       .single();
     
     if (error) {
-      if (error.code === 'PGRST116') {
-        // No data found - this is not really an error
-        return null;
+      if (error.code !== 'PGRST116') { // No rows returned is not a true error
+        console.error("Error fetching latest assessment:", error);
       }
-      console.error("Error fetching latest assessment:", error);
       return null;
     }
     
-    return data as AssessmentResult;
-  } catch (err) {
-    console.error("Exception fetching latest assessment:", err);
+    return data as unknown as AssessmentResult;
+  } catch (error) {
+    console.error("Error fetching latest assessment:", error);
     return null;
   }
 };

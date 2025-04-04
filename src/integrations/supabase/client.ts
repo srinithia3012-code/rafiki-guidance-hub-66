@@ -31,7 +31,26 @@ export const supabase = createClient<Database>(
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: true,
-      redirectTo: getRedirectUrl()
+    },
+    global: {
+      headers: {
+        'x-application-name': 'rafiki-guidance-hub'
+      }
     }
   }
 );
+
+// Set the redirect URL after client initialization
+if (typeof window !== 'undefined') {
+  supabase.auth.setSession({
+    access_token: '',
+    refresh_token: '',
+  });
+  
+  supabase.auth.setSettings({
+    flowType: 'pkce',
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+  });
+}

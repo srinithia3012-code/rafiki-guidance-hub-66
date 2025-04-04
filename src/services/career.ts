@@ -32,7 +32,7 @@ export const getUserCareerProfile = async (userId: string) => {
     const { data, error } = await supabase
       .from('career_profiles')
       .select('*')
-      .eq('user_id', userId)
+      .eq('user_id', userId as any)
       .single();
     
     if (error) {
@@ -40,7 +40,7 @@ export const getUserCareerProfile = async (userId: string) => {
       return null;
     }
     
-    return data as CareerProfile;
+    return data as unknown as CareerProfile;
   } catch (error) {
     console.error("Error fetching career profile:", error);
     return null;
@@ -52,7 +52,7 @@ export const createCareerProfile = async (userId: string, profileData: Partial<C
     const { data, error } = await supabase
       .from('career_profiles')
       .insert({
-        user_id: userId,
+        user_id: userId as any,
         interests: profileData.interests || [],
         skills: profileData.skills || [],
         education_level: profileData.education_level || null,
@@ -68,7 +68,7 @@ export const createCareerProfile = async (userId: string, profileData: Partial<C
     }
     
     toast.success("Career profile created successfully");
-    return data as CareerProfile;
+    return data as unknown as CareerProfile;
   } catch (error) {
     console.error("Error creating career profile:", error);
     throw error;
@@ -79,8 +79,8 @@ export const updateCareerProfile = async (profileId: string, updates: Partial<Ca
   try {
     const { data, error } = await supabase
       .from('career_profiles')
-      .update(updates)
-      .eq('id', profileId)
+      .update(updates as any)
+      .eq('id', profileId as any)
       .select()
       .single();
       
@@ -91,7 +91,7 @@ export const updateCareerProfile = async (profileId: string, updates: Partial<Ca
     }
     
     toast.success("Career profile updated successfully");
-    return data as CareerProfile;
+    return data as unknown as CareerProfile;
   } catch (error) {
     console.error("Error updating career profile:", error);
     throw error;
@@ -104,7 +104,7 @@ export const getUserJobApplications = async (userId: string) => {
     const { data, error } = await supabase
       .from('job_applications')
       .select('*')
-      .eq('user_id', userId)
+      .eq('user_id', userId as any)
       .order('application_date', { ascending: false });
     
     if (error) {
@@ -112,7 +112,7 @@ export const getUserJobApplications = async (userId: string) => {
       return [];
     }
     
-    return data as JobApplication[];
+    return data as unknown as JobApplication[];
   } catch (error) {
     console.error("Error fetching job applications:", error);
     return [];
@@ -134,8 +134,13 @@ export const createJobApplication = async (userId: string, applicationData: JobA
     const { data, error } = await supabase
       .from('job_applications')
       .insert({
-        user_id: userId,
-        ...applicationData
+        user_id: userId as any,
+        company_name: applicationData.company_name,
+        position: applicationData.position,
+        application_date: applicationData.application_date,
+        status: applicationData.status,
+        next_steps: applicationData.next_steps,
+        notes: applicationData.notes,
       })
       .select()
       .single();
@@ -147,7 +152,7 @@ export const createJobApplication = async (userId: string, applicationData: JobA
     }
     
     toast.success("Job application saved successfully");
-    return data as JobApplication;
+    return data as unknown as JobApplication;
   } catch (error) {
     console.error("Error creating job application:", error);
     throw error;
@@ -158,8 +163,8 @@ export const updateJobApplication = async (applicationId: string, updates: Parti
   try {
     const { data, error } = await supabase
       .from('job_applications')
-      .update(updates)
-      .eq('id', applicationId)
+      .update(updates as any)
+      .eq('id', applicationId as any)
       .select()
       .single();
       
@@ -170,7 +175,7 @@ export const updateJobApplication = async (applicationId: string, updates: Parti
     }
     
     toast.success("Job application updated successfully");
-    return data as JobApplication;
+    return data as unknown as JobApplication;
   } catch (error) {
     console.error("Error updating job application:", error);
     throw error;
@@ -182,7 +187,7 @@ export const deleteJobApplication = async (applicationId: string) => {
     const { error } = await supabase
       .from('job_applications')
       .delete()
-      .eq('id', applicationId);
+      .eq('id', applicationId as any);
       
     if (error) {
       console.error("Error deleting job application:", error);
