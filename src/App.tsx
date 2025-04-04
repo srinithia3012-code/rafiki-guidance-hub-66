@@ -36,6 +36,9 @@ function App() {
     : "";
   
   useEffect(() => {
+    // For debugging
+    console.log("App mounted, basename:", basename);
+    
     const checkUser = async () => {
       try {
         const { data, error } = await supabase.auth.getSession();
