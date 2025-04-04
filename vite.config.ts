@@ -6,7 +6,7 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  // Set base path for both development and production
+  // Always use the base path for GitHub Pages
   base: "/rafiki-guidance-hub-66/",
   server: {
     host: "::",
@@ -62,12 +62,13 @@ export default defineConfig(({ mode }) => ({
       transformMixedEsModules: true,
     },
   },
+  // Ensure environment variables have fallbacks for production
   define: {
-    // Inject fallback environment variables for production builds
-    // This ensures the app doesn't crash if env variables are missing
+    // Ensure environment variables have fallbacks
     ...(mode === 'production' && {
-      'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(process.env.VITE_SUPABASE_URL || 'https://mhbhyimkykyvuphbefwg.supabase.co'),
-      'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1oYmh5aW1reWt5dnVwaGJlZndnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3NjE3MjEsImV4cCI6MjA1NzMzNzcyMX0.q42WQ2LzGfzxch1ghkMOoArCGNo0jxfiqOwY9SQsXnQ'),
+      'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(process.env.VITE_SUPABASE_URL || "https://mhbhyimkykyvuphbefwg.supabase.co"),
+      'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(process.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1oYmh5aW1reWt5dnVwaGJlZndnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3NjE3MjEsImV4cCI6MjA1NzMzNzcyMX0.q42WQ2LzGfzxch1ghkMOoArCGNo0jxfiqOwY9SQsXnQ"),
+      'import.meta.env.VITE_USE_REAL_AI': JSON.stringify(process.env.VITE_USE_REAL_AI || "true"),
     })
   },
   optimizeDeps: {

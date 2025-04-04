@@ -1,3 +1,4 @@
+
 name: Deploy to GitHub Pages
 
 on:
@@ -30,11 +31,11 @@ jobs:
       - name: Install dependencies
         run: npm install
       
-      - name: Create SPA redirect files
+      - name: Create SPA redirect files for GitHub Pages
         run: |
           mkdir -p public
           
-          # Create 404.html file
+          # Create 404.html file for SPA routing
           cat > public/404.html << 'EOF'
           <!DOCTYPE html>
           <html>
@@ -45,12 +46,6 @@ jobs:
                 // Single Page Apps for GitHub Pages
                 // MIT License
                 // https://github.com/rafgraph/spa-github-pages
-                // This script takes the current url and converts the path and query
-                // string into just a query string, and then redirects the browser
-                // to the new url with only a query string and hash fragment.
-
-                // If you are creating a Project Pages site and NOT using a custom domain,
-                // then set pathSegmentsToKeep to 1 (enterprise users may need to set it to > 1).
                 var pathSegmentsToKeep = 1;
 
                 var l = window.location;
@@ -67,9 +62,6 @@ jobs:
             </body>
           </html>
           EOF
-          
-          # Create _redirects file for Netlify
-          echo '/* /index.html 200' > public/_redirects
           
           # Create redirect-script.js for index.html
           cat > public/redirect-script.js << 'EOF'
@@ -88,112 +80,21 @@ jobs:
           }(window.location))
           EOF
       
-      - name: Manually fix useChat.ts duplicated imports
+      - name: Fix supabase/client.ts to handle missing env variables
         run: |
-          # Completely recreate the file to ensure no duplicate imports
-          cat > src/hooks/chat/useChat.ts << 'EOF'
-          import { useRef, useState } from "react";
-          import { GuidanceCategory } from "@/services/ai";
-          import { useAuthCheck } from "./useAuthCheck";
-          import { useAssessmentData } from "./useAssessmentData";
-          import { useMessages } from "./useMessages";
-          import { useSendMessage } from "./useSendMessage";
-          
-          export function useChat(initialCategory: GuidanceCategory = "general") {
-            const [category, setCategory] = useState<GuidanceCategory>(initialCategory);
-            const inputRef = useRef<HTMLInputElement>(null);
-            
-            // Auth checking
-            const { user, isCheckingAuth } = useAuthCheck();
-            
-            // Assessment data loading
-            const { assessmentData } = useAssessmentData(user, category);
-            
-            // Messages handling
-            const { messages, setMessages, messagesEndRef, clearMessages } = useMessages(category, assessmentData);
-            
-            // Message sending
-            const { 
-              inputValue, 
-              setInputValue, 
-              isLoading, 
-              handleSend, 
-              handleKeyDown
-            } = useSendMessage(messages, setMessages, category, user, assessmentData, inputRef);
-            
-            const handleCategoryChange = (value: string) => {
-              const newCategory = value as GuidanceCategory;
-              
-              // Only process change if category actually changes
-              if (newCategory !== category) {
-                setCategory(newCategory);
-                
-                // Clear existing messages
-                clearMessages();
-              }
-            };
-          
-            const clearChat = () => {
-              clearMessages();
-            };
-          
-            return {
-              messages,
-              inputValue,
-              setInputValue,
-              isLoading,
-              category,
-              user,
-              isCheckingAuth,
-              messagesEndRef,
-              inputRef,
-              handleSend,
-              handleKeyDown,
-              handleCategoryChange,
-              clearChat,
-              assessmentData,
-            };
-          }
-          EOF
-          echo "Fixed useChat.ts file"
-      
-      - name: Verify vite.config.ts has correct base path
-        run: |
-          # Check if vite.config.ts exists and contains the base path
-          if grep -q "base.*rafiki-guidance-hub-66" vite.config.ts; then
-            echo "✅ vite.config.ts has correct base path"
-          else
-            echo "⚠️ Updating vite.config.ts with correct base path"
-            # Create a temporary file with the correct base path
-            cat > vite.config.ts.tmp << 'EOF'
-          import { defineConfig } from "vite";
-          import react from "@vitejs/plugin-react-swc";
-          import path from "path";
-          import { componentTagger } from "lovable-tagger";
+          cat > src/integrations/supabase/client.ts << 'EOF'
+          import { createClient } from "@supabase/supabase-js";
 
-          // https://vitejs.dev/config/
-          export default defineConfig(({ mode }) => ({
-            // Use base path for GitHub Pages
-            base: mode === 'production' ? "/rafiki-guidance-hub-66/" : "/",
-            server: {
-              host: "::",
-              port: 8080,
-            },
-            plugins: [
-              react(),
-              mode === 'development' &&
-              componentTagger(),
-            ].filter(Boolean),
-            resolve: {
-              alias: {
-                "@": path.resolve(__dirname, "./src"),
-              },
-            },
-          }));
+          // Use environment variables or fallback to hardcoded values (only for public demo purposes)
+          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "https://mhbhyimkykyvuphbefwg.supabase.co";
+          const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1oYmh5aW1reWt5dnVwaGJlZndnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3NjE3MjEsImV4cCI6MjA1NzMzNzcyMX0.q42WQ2LzGfzxch1ghkMOoArCGNo0jxfiqOwY9SQsXnQ";
+
+          if (!supabaseUrl || !supabaseAnonKey) {
+            console.error("Missing Supabase environment variables. Using fallbacks if available.");
+          }
+
+          export const supabase = createClient(supabaseUrl, supabaseAnonKey);
           EOF
-            # Replace the original file with the temporary one
-            mv vite.config.ts.tmp vite.config.ts
-          fi
       
       - name: Build
         run: npm run build
@@ -201,8 +102,6 @@ jobs:
           VITE_SUPABASE_URL: "https://mhbhyimkykyvuphbefwg.supabase.co"
           VITE_SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1oYmh5aW1reWt5dnVwaGJlZndnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3NjE3MjEsImV4cCI6MjA1NzMzNzcyMX0.q42WQ2LzGfzxch1ghkMOoArCGNo0jxfiqOwY9SQsXnQ"
           VITE_USE_REAL_AI: "true"
-          VITE_API_URL: ${{ secrets.VITE_API_URL || '' }}
-          VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY || '' }}
       
       - name: Add SPA routing script to index.html
         run: |
@@ -212,22 +111,6 @@ jobs:
           # Add the script tag to index.html
           sed -i 's/<head>/<head>\n    <script type="text\/javascript" src="\/rafiki-guidance-hub-66\/redirect-script.js"><\/script>/' dist/index.html
       
-      - name: Create netlify.toml
-        run: |
-          cat > netlify.toml << 'EOF'
-          [build]
-            publish = "dist"
-            command = "npm run build"
-
-          [[redirects]]
-            from = "/*"
-            to = "/index.html"
-            status = 200
-
-          [build.environment]
-            VITE_API_URL = "/api"
-          EOF
-      
       - name: Setup Pages
         uses: actions/configure-pages@v4
       
@@ -235,15 +118,6 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: './dist'
-          
-      - name: Cache dist folder
-        uses: actions/cache@v3
-        with:
-          path: |
-            ./dist
-          key: ${{ runner.os }}-dist-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-dist-
 
   deploy:
     environment:
