@@ -106,8 +106,10 @@ export function useSendMessage(
 
       // Analyze sentiment of user message (optional)
       const sentimentResult = await analyzeSentiment(inputValue);
-      // Fix the type error by ensuring sentiment is one of the allowed values
-      userMessage.sentiment = sentimentResult.sentiment as "neutral" | "positive" | "negative";
+      // Add sentiment to user message
+      if (sentimentResult && typeof sentimentResult.sentiment === 'string') {
+        userMessage.sentiment = sentimentResult.sentiment as "neutral" | "positive" | "negative";
+      }
 
       // Prepare additional context from assessment data
       let contextMessage = "";

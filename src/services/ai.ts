@@ -9,17 +9,23 @@ export type ChatMessage = {
 
 export type GuidanceCategory = "general" | "career" | "academic" | "wellbeing" | "stress_management" | "mental_health";
 
-// Initialize OpenAI client (replace with your actual API key)
-const openai = new OpenAI({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true, // remove this line in production
-});
+// Initialize OpenAI client with safety checks
+let openai: OpenAI | null = null;
 
-// Mock API response type
-type MockApiResponse = {
-  response: string;
-  sources?: string[];
-};
+try {
+  // Only initialize OpenAI if API key is available
+  const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+  if (apiKey) {
+    openai = new OpenAI({
+      apiKey,
+      dangerouslyAllowBrowser: true, // remove this line in production
+    });
+  } else {
+    console.warn('OpenAI API Key not found. Sentiment analysis will use fallback mode.');
+  }
+} catch (error) {
+  console.error('Error initializing OpenAI client:', error);
+}
 
 // Function to send message to AI and get response
 export const sendMessageToAI = async (message: string, category: GuidanceCategory = "general", chatHistory: ChatMessage[] = []) => {
@@ -79,36 +85,67 @@ export const sendMessageToAI = async (message: string, category: GuidanceCategor
   }
 };
 
-// Sentiment Analysis function
+// Sentiment Analysis function with fallback
 export const analyzeSentiment = async (text: string) => {
   try {
-    const response = await openai.completions.create({
-      model: "text-davinci-003",
-      prompt: `Analyze the sentiment of the following text and provide a sentiment label (positive, negative, or neutral) and a score between -1 and 1:\n\n${text}\n\nSentiment:`,
-      max_tokens: 50,
-      temperature: 0.5,
-    });
+    // If OpenAI client is available, use it for sentiment analysis
+    if (openai) {
+      const response = await openai.completions.create({
+        model: "text-davinci-003",
+        prompt: `Analyze the sentiment of the following text and provide a sentiment label (positive, negative, or neutral) and a score between -1 and 1:\n\n${text}\n\nSentiment:`,
+        max_tokens: 50,
+        temperature: 0.5,
+      });
 
-    const result = response.choices[0].text?.trim();
-    if (!result) {
-      throw new Error("Could not determine sentiment.");
+      const result = response.choices[0].text?.trim();
+      if (!result) {
+        return getFallbackSentiment(text);
+      }
+
+      const [sentiment, scoreStr] = result.split(",").map((s) => s.trim());
+      const score = parseFloat(scoreStr);
+
+      return {
+        sentiment: sentiment.toLowerCase(),
+        score,
+      };
+    } else {
+      // Use fallback if OpenAI client is not available
+      return getFallbackSentiment(text);
     }
-
-    const [sentiment, scoreStr] = result.split(",").map((s) => s.trim());
-    const score = parseFloat(scoreStr);
-
-    return {
-      sentiment: sentiment.toLowerCase(),
-      score,
-    };
   } catch (error) {
     console.error("Error analyzing sentiment:", error);
-    return {
-      sentiment: "neutral",
-      score: 0,
-    };
+    return getFallbackSentiment(text);
   }
 };
+
+// Simple fallback for sentiment analysis when OpenAI is unavailable
+function getFallbackSentiment(text: string) {
+  // Very basic sentiment analysis based on keywords
+  const lowerText = text.toLowerCase();
+  
+  const positiveWords = ['happy', 'good', 'great', 'excellent', 'wonderful', 'love', 'like', 'enjoy', 'pleased', 'thanks'];
+  const negativeWords = ['sad', 'bad', 'terrible', 'awful', 'hate', 'dislike', 'angry', 'upset', 'unhappy', 'worried', 'stress', 'anxiety'];
+  
+  let positiveCount = 0;
+  let negativeCount = 0;
+  
+  positiveWords.forEach(word => {
+    if (lowerText.includes(word)) positiveCount++;
+  });
+  
+  negativeWords.forEach(word => {
+    if (lowerText.includes(word)) negativeCount++;
+  });
+  
+  if (positiveCount > negativeCount) {
+    return { sentiment: 'positive', score: 0.5 };
+  } else if (negativeCount > positiveCount) {
+    return { sentiment: 'negative', score: -0.5 };
+  } else {
+    return { sentiment: 'neutral', score: 0 };
+  }
+}
 
 // New function to get wellness resources based on sentiment
 export const getWellnessResources = async (sentiment: string) => {
