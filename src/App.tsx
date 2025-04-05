@@ -31,9 +31,11 @@ function App() {
   
   // Determine the basename for router based on environment
   const getBasename = () => {
-    return import.meta.env.MODE === 'production' && window.location.hostname.includes('github.io')
-      ? '/rafiki-guidance-hub-66'
-      : '/';
+    // Check if we're in production and on GitHub Pages
+    if (import.meta.env.MODE === 'production' && window.location.hostname.includes('github.io')) {
+      return '/rafiki-guidance-hub-66/';
+    }
+    return '/';
   };
 
   useEffect(() => {
@@ -68,8 +70,14 @@ function App() {
     return <LoadingSpinner />;
   }
 
+  // Get the correct basename for the current environment
+  const basename = getBasename();
+  
+  // Log the basename to help with debugging
+  console.log("Router basename:", basename);
+
   return (
-    <Router basename={getBasename()}>
+    <Router basename={basename}>
       <Toaster position="top-center" />
       <div className="min-h-screen flex flex-col">
         <Navbar />
