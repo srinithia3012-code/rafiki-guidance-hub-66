@@ -1,9 +1,9 @@
 [build]
-  command = "npm run build -- --base=/rafiki-guidance-hub-66/"
+  command = "rm -rf package-lock.json node_modules && npm install && npm run build:netlify"
   publish = "dist"
 
 [build.environment]
-  NODE_VERSION = "20"
+  NODE_VERSION = "18"
   NPM_FLAGS = "--legacy-peer-deps"
   VITE_SUPABASE_URL = "https://mhbhyimkykyvuphbefwg.supabase.co"
   VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1oYmh5aW1reWt5dnVwaGJlZndnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3NjE3MjEsImV4cCI6MjA1NzMzNzcyMX0.q42WQ2LzGfzxch1ghkMOoArCGNo0jxfiqOwY9SQsXnQ"

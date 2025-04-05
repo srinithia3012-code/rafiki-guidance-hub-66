@@ -5,15 +5,25 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => {
-  // Determine the base path - use "/" for development and Lovable preview
+export default defineConfig(({ mode, command }) => {
+  console.log(`Running Vite in ${mode} mode with command ${command}`);
+  // Determine the base path - use "/" for development and most production deployments
   // For GitHub Pages deployment, use the repository name as base
-  const base = mode === 'production' && process.env.GITHUB_ACTIONS === 'true' 
-    ? '/rafiki-guidance-hub-66/' 
-    : '/';
-  
+  // For Netlify and Vercel, use "/"
+  let base = '/';
+
+  // GitHub Pages needs a specific base path
+  if (mode === 'production' && process.env.GITHUB_ACTIONS === 'true') {
+    base = '/rafiki-guidance-hub-66/';
+  }
+
+  // Allow base path to be overridden by environment variable or build argument
+  if (process.env.BASE_URL) {
+    base = process.env.BASE_URL;
+  }
+
   console.log(`Building with base: ${base} for mode: ${mode}`);
-  
+
   return {
     base,
     server: {

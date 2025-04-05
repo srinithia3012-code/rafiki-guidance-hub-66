@@ -8,12 +8,14 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "build:ci": "CI=false vite build",
+    "build:netlify": "vite build --mode netlify",
     "analyze": "vite build --mode analyze",
     "lint": "eslint .",
     "preview": "vite preview",
     "clean": "rm -rf node_modules package-lock.json dist",
     "deploy:netlify": "netlify deploy --prod",
-    "deploy:vercel": "vercel --prod"
+    "deploy:vercel": "vercel --prod",
+    "postinstall": "npm install @rollup/rollup-linux-x64-gnu || true"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
