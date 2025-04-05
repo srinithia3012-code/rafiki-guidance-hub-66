@@ -11,7 +11,9 @@
     "analyze": "vite build --mode analyze",
     "lint": "eslint .",
     "preview": "vite preview",
-    "clean": "rm -rf node_modules package-lock.json dist"
+    "clean": "rm -rf node_modules package-lock.json dist",
+    "deploy:netlify": "netlify deploy --prod",
+    "deploy:vercel": "vercel --prod"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

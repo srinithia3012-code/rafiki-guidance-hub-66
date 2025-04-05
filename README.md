@@ -93,12 +93,53 @@ Rafiki AI is a comprehensive student support platform designed to provide person
 
 ## 🌐 Deployment
 
-The application can be deployed to various platforms:
+The application is configured for easy deployment to multiple platforms:
 
-- **Netlify**: Connect your GitHub repository for automatic deployments
-- **Vercel**: Import the project and configure build settings
-- **GitHub Pages**: Use GitHub Actions for automated deployment
-- **Custom Domain**: Configure DNS settings to use your own domain
+### Netlify Deployment
+
+1. **Automatic Deployment**: Connect your GitHub repository to Netlify for automatic deployments
+   - Netlify will detect the `netlify.toml` configuration file
+   - Environment variables are pre-configured in the `netlify.toml` file
+
+2. **Manual Deployment**: Use the Netlify CLI
+   ```bash
+   # Install Netlify CLI if you haven't already
+   npm install -g netlify-cli
+
+   # Login to your Netlify account
+   netlify login
+
+   # Deploy to Netlify
+   npm run deploy:netlify
+   ```
+
+### Vercel Deployment
+
+1. **Automatic Deployment**: Connect your GitHub repository to Vercel for automatic deployments
+   - Vercel will detect the `vercel.json` configuration file
+   - Environment variables are pre-configured in the `vercel.json` file
+
+2. **Manual Deployment**: Use the Vercel CLI
+   ```bash
+   # Install Vercel CLI if you haven't already
+   npm install -g vercel
+
+   # Login to your Vercel account
+   vercel login
+
+   # Deploy to Vercel
+   npm run deploy:vercel
+   ```
+
+### GitHub Pages
+
+- The repository is already configured with GitHub Actions for automated deployment
+- See the `.github/workflows/ci-cd.yml` file for configuration details
+
+### Custom Domain
+
+- Configure DNS settings to use your own domain with any of the above platforms
+- Follow the platform-specific instructions for adding a custom domain
 
 ## 🤝 Contributing
 
