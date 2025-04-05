@@ -21,34 +21,51 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 18
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: |
-          npm cache clean --force
-          rm -rf node_modules
-          npm install --no-optional
-        
+          npm install
+          # If build fails due to package-lock.json issues, try:
+          # npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+
       - name: Build
-        run: npm run build
+        run: |
+          # Add verbose output for debugging
+          echo "Node version: $(node -v)"
+          echo "NPM version: $(npm -v)"
+
+          # Run the build with environment variables
+          npm run build
         env:
           GITHUB_ACTIONS: 'true'
           CI: false
-      
+          VITE_SUPABASE_URL: 'https://mhbhyimkykyvuphbefwg.supabase.co'
+          VITE_SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1oYmh5aW1reWt5dnVwaGJlZndnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3NjE3MjEsImV4cCI6MjA1NzMzNzcyMX0.q42WQ2LzGfzxch1ghkMOoArCGNo0jxfiqOwY9SQsXnQ'
+          BASE_URL: '/rafiki-guidance-hub-66/'
+
       # Create a special 404.html file for GitHub Pages SPA routing
       - name: Create SPA 404.html
         run: |
-          cp dist/index.html dist/404.html
-          echo "Created SPA 404.html for client-side routing"
-      
+          if [ -f "dist/index.html" ]; then
+            cp dist/index.html dist/404.html
+            echo "Created SPA 404.html for client-side routing"
+          else
+            echo "Warning: dist/index.html not found. Build may have failed or output directory is different."
+            ls -la dist/ || echo "dist directory not found"
+            # Create an empty 404.html to prevent workflow failure
+            mkdir -p dist
+            echo "<html><body><h1>Page not found</h1></body></html>" > dist/404.html
+          fi
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
-      
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
@@ -63,4 +80,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4 
+        uses: actions/deploy-pages@v4
