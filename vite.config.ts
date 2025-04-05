@@ -47,14 +47,29 @@ export default defineConfig(({ mode }) => {
           manualChunks: {
             vendor: ['react', 'react-dom', 'react-router-dom'],
             ui: ['@/components/ui'],
+            supabase: ['@supabase/supabase-js'],
+            openai: ['openai'],
+            charts: ['recharts'],
           },
         },
       },
       // Reduce chunk size warnings
       chunkSizeWarningLimit: 1000,
+      // Enable source map generation for debugging
+      sourcemap: mode !== 'production',
+      // Enable asset hashing for better caching
+      assetsInlineLimit: 4096,
     },
     optimizeDeps: {
       include: ['react', 'react-dom', 'react-router-dom'],
+      // Exclude large dependencies from optimization to speed up dev server start
+      exclude: ['@supabase/supabase-js', 'openai'],
+    },
+    // Add caching headers to static assets
+    preview: {
+      headers: {
+        'Cache-Control': 'public, max-age=31536000', // 1 year for static assets
+      },
     },
   };
 });

@@ -27,6 +27,10 @@ try {
   console.error('Error initializing OpenAI client:', error);
 }
 
+// Simple in-memory cache for AI responses
+const responseCache = new Map<string, {text: string, timestamp: number, sourceLinks: string[]}>();
+const CACHE_TTL = 1000 * 60 * 60; // 1 hour cache lifetime
+
 // Function to send message to AI and get response
 export const sendMessageToAI = async (message: string, category: GuidanceCategory = "general", chatHistory: ChatMessage[] = []) => {
   try {
@@ -36,6 +40,22 @@ export const sendMessageToAI = async (message: string, category: GuidanceCategor
     const timeoutId = setTimeout(() => {
       controller.abort();
     }, 30000); // 30 seconds timeout
+    
+    // Create a cache key based on message, category and chat history length
+    const cacheKey = `${message}-${category}-${chatHistory.length}`;
+    
+    // Check if we have a cached response that's not expired
+    if (responseCache.has(cacheKey)) {
+      const cachedResponse = responseCache.get(cacheKey)!;
+      if (Date.now() - cachedResponse.timestamp < CACHE_TTL) {
+        clearTimeout(timeoutId);
+        console.log('Using cached AI response');
+        return {
+          text: cachedResponse.text,
+          sourceLinks: cachedResponse.sourceLinks
+        };
+      }
+    }
     
     // In development, use the local mock API
     if (import.meta.env.MODE === 'development' || import.meta.env.MODE === 'preview') {
@@ -57,6 +77,13 @@ export const sendMessageToAI = async (message: string, category: GuidanceCategor
         const data = await response.json();
         clearTimeout(timeoutId);
         
+        // Cache the response
+        responseCache.set(cacheKey, {
+          text: data.response || "I'm sorry, I don't have an answer for that.",
+          sourceLinks: data.sources || [],
+          timestamp: Date.now()
+        });
+        
         return {
           text: data.response || "I'm sorry, I don't have an answer for that.",
           sourceLinks: data.sources || []
@@ -74,10 +101,19 @@ export const sendMessageToAI = async (message: string, category: GuidanceCategor
       
       // Simulating a production response for now
       clearTimeout(timeoutId);
-      return {
+      
+      // Cache the simulated response
+      const simulatedResponse = {
         text: "This is a simulated AI response. In production, this would come from an actual AI service.",
         sourceLinks: []
       };
+      
+      responseCache.set(cacheKey, {
+        ...simulatedResponse,
+        timestamp: Date.now()
+      });
+      
+      return simulatedResponse;
     }
   } catch (error: any) {
     console.error('Error in AI service:', error);
@@ -85,9 +121,25 @@ export const sendMessageToAI = async (message: string, category: GuidanceCategor
   }
 };
 
+// Simple in-memory cache for sentiment analysis
+const sentimentCache = new Map<string, {sentiment: string, score: number, timestamp: number}>();
+
 // Sentiment Analysis function with fallback
 export const analyzeSentiment = async (text: string) => {
   try {
+    // Check if we have a cached sentiment analysis
+    const cacheKey = text.toLowerCase().trim();
+    if (sentimentCache.has(cacheKey)) {
+      const cachedResult = sentimentCache.get(cacheKey)!;
+      if (Date.now() - cachedResult.timestamp < CACHE_TTL) {
+        console.log('Using cached sentiment analysis');
+        return {
+          sentiment: cachedResult.sentiment,
+          score: cachedResult.score
+        };
+      }
+    }
+  
     // If OpenAI client is available, use it for sentiment analysis
     if (openai) {
       const response = await openai.completions.create({
@@ -105,13 +157,28 @@ export const analyzeSentiment = async (text: string) => {
       const [sentiment, scoreStr] = result.split(",").map((s) => s.trim());
       const score = parseFloat(scoreStr);
 
+      // Cache the result
+      sentimentCache.set(cacheKey, {
+        sentiment: sentiment.toLowerCase(),
+        score,
+        timestamp: Date.now()
+      });
+
       return {
         sentiment: sentiment.toLowerCase(),
         score,
       };
     } else {
       // Use fallback if OpenAI client is not available
-      return getFallbackSentiment(text);
+      const fallbackResult = getFallbackSentiment(text);
+      
+      // Cache the fallback result
+      sentimentCache.set(cacheKey, {
+        ...fallbackResult,
+        timestamp: Date.now()
+      });
+      
+      return fallbackResult;
     }
   } catch (error) {
     console.error("Error analyzing sentiment:", error);
@@ -147,8 +214,20 @@ function getFallbackSentiment(text: string) {
   }
 }
 
+// Cache for wellness resources
+const resourcesCache = new Map<string, {resources: any[], timestamp: number}>();
+
 // New function to get wellness resources based on sentiment
 export const getWellnessResources = async (sentiment: string) => {
+  // Check if we have cached resources for this sentiment
+  if (resourcesCache.has(sentiment)) {
+    const cachedResources = resourcesCache.get(sentiment)!;
+    if (Date.now() - cachedResources.timestamp < CACHE_TTL) {
+      console.log('Using cached wellness resources');
+      return cachedResources.resources;
+    }
+  }
+
   // This is a mock function that returns resources based on sentiment
   // In a real application, this would fetch from a database or API
   
@@ -171,14 +250,26 @@ export const getWellnessResources = async (sentiment: string) => {
     { title: "Crisis Support Resources", link: "/resources/crisis-support" }
   ];
   
+  let resources;
   switch (sentiment) {
     case "positive":
-      return positiveResources;
+      resources = positiveResources;
+      break;
     case "neutral":
-      return neutralResources;
+      resources = neutralResources;
+      break;
     case "negative":
-      return negativeResources;
+      resources = negativeResources;
+      break;
     default:
-      return neutralResources;
+      resources = neutralResources;
   }
+  
+  // Cache the resources
+  resourcesCache.set(sentiment, {
+    resources,
+    timestamp: Date.now()
+  });
+  
+  return resources;
 };

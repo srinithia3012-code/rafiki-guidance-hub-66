@@ -1,5 +1,5 @@
 
-import { useState, RefObject, useEffect } from "react";
+import { useState, RefObject, useEffect, useCallback } from "react";
 import { User } from "@supabase/supabase-js";
 import { GuidanceCategory, sendMessageToAI, analyzeSentiment } from "@/services/ai";
 import { toast } from "sonner";
@@ -26,6 +26,24 @@ export function useSendMessage(
     }
   }, [user, messages.length, hasInitialPromptBeenSent]);
 
+  // Memoize the chat history preparation function for better performance
+  const prepareChatHistory = useCallback((msgs: Message[]) => {
+    return msgs
+      .filter(msg => msg.id !== "welcome") // Remove welcome message
+      .map(msg => ({
+        role: msg.sender === "user" ? "user" as const : "model" as const,
+        content: msg.content
+      }));
+  }, []);
+
+  // Memoize the context preparation function
+  const prepareContextMessage = useCallback((data: any) => {
+    if (data && data.score) {
+      return getAssessmentPromptContext(data);
+    }
+    return "";
+  }, []);
+
   const sendInitialPrompt = async () => {
     if (!user) return;
     
@@ -35,18 +53,10 @@ export function useSendMessage(
       const initialPrompt = "Tell me briefly about what you can help me with as a guidance counselor in this category.";
       
       // Convert messages to format expected by AI service
-      const chatHistory = messages
-        .filter(msg => msg.id !== "welcome") // Remove welcome message
-        .map(msg => ({
-          role: msg.sender === "user" ? "user" as const : "model" as const,
-          content: msg.content
-        }));
+      const chatHistory = prepareChatHistory(messages);
 
       // Prepare additional context from assessment data
-      let contextMessage = "";
-      if (assessmentData && assessmentData.score) {
-        contextMessage = getAssessmentPromptContext(assessmentData);
-      }
+      let contextMessage = prepareContextMessage(assessmentData);
 
       // Get response from AI
       const response = await sendMessageToAI(
@@ -96,13 +106,8 @@ export function useSendMessage(
     try {
       console.log("Sending message with user:", user.email);
       
-      // Convert messages to format expected by AI service
-      const chatHistory = messages
-        .filter(msg => msg.id !== "welcome") // Remove welcome message
-        .map(msg => ({
-          role: msg.sender === "user" ? "user" as const : "model" as const,
-          content: msg.content
-        }));
+      // Convert messages to format expected by AI service using memoized function
+      const chatHistory = prepareChatHistory(messages);
 
       // Analyze sentiment of user message (optional)
       const sentimentResult = await analyzeSentiment(inputValue);
@@ -111,11 +116,8 @@ export function useSendMessage(
         userMessage.sentiment = sentimentResult.sentiment as "neutral" | "positive" | "negative";
       }
 
-      // Prepare additional context from assessment data
-      let contextMessage = "";
-      if (assessmentData && assessmentData.score) {
-        contextMessage = getAssessmentPromptContext(assessmentData);
-      }
+      // Prepare additional context from assessment data using memoized function
+      let contextMessage = prepareContextMessage(assessmentData);
 
       // Get response from AI
       const response = await sendMessageToAI(
