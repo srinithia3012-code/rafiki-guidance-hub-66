@@ -25,14 +25,18 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
           cache: 'npm'
 
       - name: Install dependencies
         run: |
+          # Remove package-lock.json and node_modules to fix Rollup module issue
+          rm -f package-lock.json
+          rm -rf node_modules
+
+          # Install dependencies with explicit Rollup installation
           npm install
-          # If build fails due to package-lock.json issues, try:
-          # npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+          npm install @rollup/rollup-linux-x64-gnu
 
       - name: Build
         run: |
@@ -41,7 +45,15 @@ jobs:
           echo "NPM version: $(npm -v)"
 
           # Run the build with environment variables
-          npm run build
+          npm run build || (
+            echo "Main build failed, trying alternative approach..."
+            # Try installing additional dependencies that might help
+            npm install rollup @rollup/plugin-node-resolve @rollup/plugin-commonjs
+            npm install @rollup/rollup-linux-x64-gnu
+
+            # Try build again
+            npm run build
+          )
         env:
           GITHUB_ACTIONS: 'true'
           CI: false
