@@ -34,6 +34,12 @@ export default defineConfig(({ mode }) => {
       // Improve build performance
       target: 'es2015',
       minify: 'terser',
+      terserOptions: {
+        compress: {
+          drop_console: false, // Keep console logs for debugging
+          drop_debugger: true
+        }
+      },
       cssMinify: true,
       // Enable code splitting
       rollupOptions: {
