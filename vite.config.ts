@@ -62,8 +62,11 @@ export default defineConfig(({ mode }) => {
     },
     optimizeDeps: {
       include: ['react', 'react-dom', 'react-router-dom'],
-      // Exclude large dependencies from optimization to speed up dev server start
-      exclude: ['@supabase/supabase-js', 'openai'],
+      // Force include specific packages that might have ESM/CJS issues
+      esbuildOptions: {
+        resolveExtensions: ['.js', '.jsx', '.ts', '.tsx'],
+        format: 'esm'
+      },
     },
     // Add caching headers to static assets
     preview: {
