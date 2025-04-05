@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { GuidanceCategory, sendMessageToAI, analyzeSentiment } from "@/services/ai";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,7 +18,6 @@ export function useChat(initialCategory: GuidanceCategory = "general") {
   const inputRef = useRef<HTMLInputElement>(null);
   const [assessmentData, setAssessmentData] = useState<any>(null);
 
-  // Check authentication state
   useEffect(() => {
     const checkUser = async () => {
       setIsCheckingAuth(true);
@@ -28,7 +26,6 @@ export function useChat(initialCategory: GuidanceCategory = "general") {
         console.log("Auth session:", data.session);
         setUser(data.session?.user || null);
         
-        // Subscribe to auth changes
         const { data: authListener } = supabase.auth.onAuthStateChange(
           (_event, session) => {
             console.log("Auth state changed:", session?.user?.email);
@@ -50,13 +47,11 @@ export function useChat(initialCategory: GuidanceCategory = "general") {
     checkUser();
   }, []);
 
-  // Load assessment data when user and category change
   useEffect(() => {
     const loadAssessmentData = async () => {
       if (!user) return;
       
       try {
-        // Map guidance category to assessment type
         let assessmentType = "";
         if (category === "career") {
           assessmentType = "career";
@@ -84,12 +79,9 @@ export function useChat(initialCategory: GuidanceCategory = "general") {
     loadAssessmentData();
   }, [user, category]);
 
-  // Welcome message with assessment data
   useEffect(() => {
-    // Create base welcome message
     let welcomeMessage = getCategoryWelcomeMessage(category);
     
-    // Add assessment data context if available
     if (assessmentData) {
       const assessmentInfo = getAssessmentSummary(assessmentData);
       if (assessmentInfo) {
@@ -106,7 +98,6 @@ export function useChat(initialCategory: GuidanceCategory = "general") {
     }]);
   }, [category, assessmentData]);
 
-  // Auto scroll to bottom of messages
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -118,7 +109,6 @@ export function useChat(initialCategory: GuidanceCategory = "general") {
   const handleSend = async () => {
     if (!inputValue.trim()) return;
     
-    // Check if user is authenticated
     if (!user) {
       toast.error("Please sign in to use the chat feature");
       return;
@@ -139,25 +129,21 @@ export function useChat(initialCategory: GuidanceCategory = "general") {
     try {
       console.log("Sending message with user:", user.email);
       
-      // Convert messages to format expected by AI service
       const chatHistory = messages
-        .filter(msg => msg.id !== "welcome") // Remove welcome message
+        .filter(msg => msg.id !== "welcome")
         .map(msg => ({
           role: msg.sender === "user" ? "user" as const : "model" as const,
           content: msg.content
         }));
 
-      // Analyze sentiment of user message (optional)
       const sentimentResult = await analyzeSentiment(inputValue);
-      userMessage.sentiment = sentimentResult.sentiment;
+      userMessage.sentiment = sentimentResult.sentiment as "neutral" | "positive" | "negative";
 
-      // Prepare additional context from assessment data
       let contextMessage = "";
       if (assessmentData && assessmentData.score) {
         contextMessage = getAssessmentPromptContext(assessmentData);
       }
 
-      // Get response from AI
       const response = await sendMessageToAI(
         contextMessage ? `${contextMessage}\n\nUser message: ${inputValue}` : inputValue, 
         category, 
@@ -174,7 +160,6 @@ export function useChat(initialCategory: GuidanceCategory = "general") {
 
       setMessages((prev) => [...prev, aiMessage]);
 
-      // If message shows signs of distress, show additional resources
       if (sentimentResult.sentiment === "negative" && sentimentResult.score < -0.2) {
         toast.info(
           "Need additional support? Remember that professional help is available. Consider reaching out to your university's counseling services.",
@@ -194,7 +179,6 @@ export function useChat(initialCategory: GuidanceCategory = "general") {
     }
   };
 
-  // Helper function to generate assessment context for AI prompt
   const getAssessmentPromptContext = (assessment: any) => {
     if (!assessment || !assessment.score) return "";
     
@@ -210,7 +194,6 @@ export function useChat(initialCategory: GuidanceCategory = "general") {
       contextString += "Mental Wellbeing Assessment Results:\n";
     }
     
-    // Add score data
     Object.entries(assessment.score).forEach(([key, value]) => {
       const formattedKey = key.split("_").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
       contextString += `- ${formattedKey}: ${value}%\n`;
@@ -221,7 +204,6 @@ export function useChat(initialCategory: GuidanceCategory = "general") {
     return contextString;
   };
 
-  // Helper function to get a summary of assessment results
   const getAssessmentSummary = (assessment: any) => {
     if (!assessment || !assessment.score) return "";
     
@@ -238,7 +220,6 @@ export function useChat(initialCategory: GuidanceCategory = "general") {
     return "I can provide personalized guidance based on your assessment results.";
   };
 
-  // Helper function to get assessment title
   const getAssessmentTitle = (assessmentId: string) => {
     switch (assessmentId) {
       case "career-personality":
@@ -271,7 +252,6 @@ export function useChat(initialCategory: GuidanceCategory = "general") {
   };
 
   const clearChat = () => {
-    // Create welcome message with assessment data if available
     let welcomeMessage = getCategoryWelcomeMessage(category);
     
     if (assessmentData) {

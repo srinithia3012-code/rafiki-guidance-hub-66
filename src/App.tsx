@@ -28,6 +28,13 @@ const LoadingSpinner = () => (
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  
+  // Determine the basename for router based on environment
+  const getBasename = () => {
+    return import.meta.env.MODE === 'production' && window.location.hostname.includes('github.io')
+      ? '/rafiki-guidance-hub-66'
+      : '/';
+  };
 
   useEffect(() => {
     const checkUser = async () => {
@@ -62,7 +69,7 @@ function App() {
   }
 
   return (
-    <Router>
+    <Router basename={getBasename()}>
       <Toaster position="top-center" />
       <div className="min-h-screen flex flex-col">
         <Navbar />

@@ -106,7 +106,8 @@ export function useSendMessage(
 
       // Analyze sentiment of user message (optional)
       const sentimentResult = await analyzeSentiment(inputValue);
-      userMessage.sentiment = sentimentResult.sentiment;
+      // Fix the type error by ensuring sentiment is one of the allowed values
+      userMessage.sentiment = sentimentResult.sentiment as "neutral" | "positive" | "negative";
 
       // Prepare additional context from assessment data
       let contextMessage = "";
@@ -164,6 +165,6 @@ export function useSendMessage(
     isLoading,
     handleSend,
     handleKeyDown,
-    sendInitialPrompt  // Ensure this is exported
+    sendInitialPrompt
   };
 }
