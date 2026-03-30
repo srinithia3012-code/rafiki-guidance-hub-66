@@ -81,6 +81,88 @@ Rafiki AI is a comprehensive student support platform designed to provide person
 
 5. Open [http://localhost:8080](http://localhost:8080) in your browser to view the application
 
+### Mental Health Forum - Detailed Setup
+
+**Project Title:** Mental Health Forum
+
+1. Installation
+   ```bash
+   git clone <repository_url>
+   ```
+
+2. Open in VS Code
+   ```bash
+   code .
+   ```
+
+3. Install Dependencies
+   ```bash
+   npm install
+   ```
+
+4. Configure Environment Variables
+   Create a `.env` file in the root directory and add:
+   ```
+   VITE_SUPABASE_URL=your_supabase_project_url
+   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   VITE_OPENAI_API_KEY=your_openai_api_key
+   ```
+   These environment variables are required to connect the application with Supabase and OpenAI services.
+
+5. Run the Project
+   ```bash
+   npm run dev
+   ```
+   Then open `http://localhost:8080`.
+
+6. Push Changes to GitHub
+   ```bash
+   git status -sb
+   git add -A
+   git commit -m "Your message"
+   git push
+   ```
+
+#### How to Find Environment Variables
+
+1. `VITE_SUPABASE_URL`
+   Steps:
+   1. Go to https://supabase.com
+   2. Log in to your Supabase account
+   3. Select your project
+   4. In the left sidebar, click Project Settings
+   5. Go to API
+   6. Under Project URL, copy the URL
+   Use it as:
+   ```
+   VITE_SUPABASE_URL=https://your-project-id.supabase.co
+   ```
+
+2. `VITE_SUPABASE_ANON_KEY`
+   Steps:
+   1. Open your Supabase project
+   2. Navigate to Project Settings → API
+   3. Under Project API Keys
+   4. Copy the anon public key
+   Use it as:
+   ```
+   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   ```
+   This key is safe for frontend use but should still not be shared publicly.
+
+3. `VITE_OPENAI_API_KEY`
+   Steps:
+   1. Go to https://platform.openai.com
+   2. Sign in to your OpenAI account
+   3. Click your profile icon → View API keys
+   4. Click Create new secret key
+   5. Copy the generated API key
+   Use it as:
+   ```
+   VITE_OPENAI_API_KEY=your_openai_api_key
+   ```
+   Keep this key private and do not commit it to GitHub.
+
 ### Supabase Setup
 
 1. Create a Supabase project at [supabase.com](https://supabase.com)
