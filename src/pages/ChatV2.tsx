@@ -14,7 +14,6 @@ interface Message {
   category?: GuidanceCategory;
 }
 
-// Type definitions for Gemini API request/response
 interface GeminiContent {
   role: "user" | "model";
   parts: { text: string }[];
@@ -34,6 +33,11 @@ interface GeminiRequest {
   }[];
 }
 
+interface GeminiModel {
+  name: string;
+  supportedGenerationMethods?: string[];
+}
+
 const ChatV2Page: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
@@ -44,23 +48,7 @@ const ChatV2Page: React.FC = () => {
   const { user, isCheckingAuth } = useAuth();
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
-  // Send initial welcome message when component mounts
-  useEffect(() => {
-    if (!isCheckingAuth && user && messages.length === 0) {
-      const welcomeMessage: Message = {
-        id: "welcome",
-        content: "Hello! I'm Rafiki, your AI guidance counselor. How can I help you today?",
-        sender: "ai",
-        timestamp: new Date(),
-        category
-      };
-      
-      setMessages([welcomeMessage]);
-      
-      // Send an initial prompt to the API
-      sendInitialPrompt();
-    }
-  }, [isCheckingAuth, user, messages.length]);
+  const [geminiModel, setGeminiModel] = useState<string>("gemini-1.5-flash-latest");
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -72,49 +60,92 @@ const ChatV2Page: React.FC = () => {
     inputRef.current?.focus();
   }, []);
 
-  // Get system prompt based on category
+  // Load available Gemini models
+  useEffect(() => {
+    const fetchModel = async () => {
+      if (!apiKey) {
+        console.warn("No Gemini API key - using default model");
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
+        );
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        const data = await response.json();
+        const models: GeminiModel[] = data.models || [];
+
+        const modelWithGenerateContent = models.find(m =>
+          m.supportedGenerationMethods?.includes("generateContent")
+        );
+
+        if (modelWithGenerateContent) {
+          const modelName = modelWithGenerateContent.name.replace(/^models\//, "");
+          setGeminiModel(modelName);
+          console.log("Using model:", modelName);
+        } else {
+          console.warn("No generateContent model found, using safe fallback");
+          setGeminiModel("gemini-1.5-flash-latest");
+        }
+      } catch (err) {
+        console.error("Error fetching models:", err);
+        setGeminiModel("gemini-1.5-flash-latest");
+      }
+    };
+
+    fetchModel();
+  }, [apiKey]);
+
+  // Welcome message when ready
+  useEffect(() => {
+    if (!isCheckingAuth && user && messages.length === 0 && geminiModel) {
+      const welcomeMessage: Message = {
+        id: "welcome",
+        content: "Hello! I'm Rafiki, your AI guidance counselor. How can I help you today?",
+        sender: "ai",
+        timestamp: new Date(),
+        category
+      };
+      setMessages([welcomeMessage]);
+      
+      setTimeout(() => sendInitialPrompt(), 800);
+    }
+  }, [isCheckingAuth, user, geminiModel]);
+
   const getSystemPrompt = (selectedCategory: GuidanceCategory): string => {
     let systemPrompt = "You are Rafiki, a helpful AI guidance counselor for university students. ";
-    
+
     switch (selectedCategory) {
       case "academic":
-        systemPrompt += "Focus on providing academic advice, study strategies, and educational guidance.";
+        systemPrompt += "Focus on academic advice, study strategies, and educational guidance.";
         break;
       case "career":
-        systemPrompt += "Focus on career planning, job opportunities, and professional development advice.";
+        systemPrompt += "Focus on career planning, job opportunities, and professional development.";
         break;
       case "mental_health":
-        systemPrompt += "Focus on mental health support, emotional well-being, and self-care strategies. " +
-          "Provide empathetic responses and practical coping mechanisms for stress, anxiety, depression, and other mental health concerns. " +
-          "If someone appears to be in crisis, suggest they reach out to professional mental health services. " +
-          "Always validate their feelings and provide evidence-based suggestions when appropriate.";
+        systemPrompt += 
+          "Focus on mental health support and self-care. Provide empathetic responses. ";
         break;
       case "stress_management":
-        systemPrompt += "Focus on stress management techniques, work-life balance, mindfulness practices, and coping mechanisms. " +
-          "Provide specific breathing exercises, grounding techniques, and practical strategies to reduce stress. " +
-          "Suggest ways to incorporate self-care into daily routines and build resilience.";
+        systemPrompt += "Focus on stress management techniques and coping strategies.";
         break;
       default:
-        systemPrompt += "Provide general guidance on university life, academics, career, and well-being.";
+        systemPrompt += "Provide guidance on university life, academics, career, and well-being.";
     }
-    
     return systemPrompt;
   };
 
-  // Send a message directly to the Gemini API
   const sendToGeminiAPI = async (
-    prompt: string, 
-    messageHistory: Message[], 
+    prompt: string,
+    messageHistory: Message[],
     specificCategory?: GuidanceCategory
   ): Promise<string> => {
-    if (!apiKey) {
-      throw new Error("Gemini API key not found. Please check your environment variables.");
-    }
+    if (!apiKey) throw new Error("Gemini API key missing");
+    if (!geminiModel) throw new Error("AI model not loaded");
 
-    // Use provided category or fall back to the current state
     const categoryToUse = specificCategory || category;
-
-    // Convert messages to the format expected by Gemini API
     const formattedHistory = messageHistory
       .filter(msg => msg.id !== "welcome")
       .map(msg => ({
@@ -122,164 +153,125 @@ const ChatV2Page: React.FC = () => {
         parts: [{ text: msg.content }]
       }));
 
-    // Add the system prompt as the first message from the model
     const contents: GeminiContent[] = [
-      {
-        role: "model",
-        parts: [{ text: getSystemPrompt(categoryToUse) }]
-      },
+      { role: "user", parts: [{ text: getSystemPrompt(categoryToUse) }] },
       ...formattedHistory,
-      {
-        role: "user",
-        parts: [{ text: prompt }]
-      }
+      { role: "user", parts: [{ text: prompt }] }
     ];
 
-    // Prepare request body
     const requestBody: GeminiRequest = {
       contents,
       generationConfig: {
         temperature: 0.7,
         topP: 0.8,
         topK: 40,
-        maxOutputTokens: 1024,
+        maxOutputTokens: 1024
       },
       safetySettings: [
-        {
-          category: "HARM_CATEGORY_HARASSMENT",
-          threshold: "BLOCK_MEDIUM_AND_ABOVE",
-        },
-        {
-          category: "HARM_CATEGORY_HATE_SPEECH",
-          threshold: "BLOCK_MEDIUM_AND_ABOVE",
-        },
-        {
-          category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-          threshold: "BLOCK_MEDIUM_AND_ABOVE",
-        },
-        {
-          category: "HARM_CATEGORY_DANGEROUS_CONTENT",
-          threshold: "BLOCK_MEDIUM_AND_ABOVE",
-        },
-      ],
+        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" }
+      ]
     };
 
-    try {
-      // Make the API request
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(requestBody),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`Gemini API error: ${errorData.error?.message || response.statusText}`);
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody)
       }
+    );
 
-      const data = await response.json();
-      
-      // Extract the AI's response text
-      const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "I'm sorry, I couldn't generate a response.";
-      
-      // Format the response text to remove asterisks
-      const formattedResponse = formatResponseText(aiResponse);
-      
-      return formattedResponse;
-    } catch (error) {
-      console.error("Error calling Gemini API:", error);
-      throw error;
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`Gemini API: ${errorData.error?.message || response.statusText}`);
     }
+
+    const data = await response.json();
+    const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "Sorry, I couldn't generate a response.";
+
+    return formatResponseText(aiResponse);
   };
 
-  // Format response text to remove asterisks and other markdown formatting
   const formatResponseText = (text: string): string => {
-    // Replace markdown headings/formatting indicators
-    let formattedText = text
-      // Remove asterisks used for emphasis/bold
-      .replace(/\*\*/g, '')
-      .replace(/\*/g, '')
-      // Replace markdown bullets with clean bullets
-      .replace(/\* /g, '• ');
-    
-    return formattedText;
+    return text
+      .replace(/\*\*(.*?)\*\*/g, "$1")
+      .replace(/\*(.*?)\*/g, "• $1")
+      .replace(/^\s*- /gm, "• ");
   };
 
   const sendInitialPrompt = async () => {
-    if (!user) return;
-    
-    setIsLoading(true);
-    
+    if (!user || !geminiModel || messages.length === 0) return;
+
     try {
-      const initialPrompt = "Tell me briefly about what you can help me with as a guidance counselor.";
-      
-      // Get response from Gemini API
+      setIsLoading(true);
+      const initialPrompt = "Briefly tell me what you can help with as a guidance counselor.";
       const responseText = await sendToGeminiAPI(initialPrompt, messages);
       
-      const aiMessage: Message = {
-        id: Date.now().toString(),
-        content: responseText,
-        sender: "ai",
-        timestamp: new Date(),
-        category,
-      };
-
-      setMessages(prev => [...prev, aiMessage]);
+      setMessages(prev => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          content: responseText,
+          sender: "ai",
+          timestamp: new Date(),
+          category
+        }
+      ]);
     } catch (error) {
-      console.error("Error sending initial prompt:", error);
-      toast.error("Failed to connect to AI service. Please try again later.");
+      console.error("Initial prompt error:", error);
+      toast.error("AI service temporarily unavailable");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleSend = async () => {
-    if (!inputValue.trim()) return;
+    if (!inputValue.trim() || !user) return;
     
-    // Check if user is authenticated
-    if (!user) {
-      toast.error("Please sign in to use the chat feature");
-      return;
-    }
-
     const userMessage: Message = {
       id: Date.now().toString(),
       content: inputValue,
       sender: "user",
       timestamp: new Date(),
-      category,
+      category
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const tempInput = inputValue;
     setInputValue("");
     setIsLoading(true);
 
     try {
-      // Get response from Gemini API
-      const responseText = await sendToGeminiAPI(inputValue, [...messages, userMessage]);
-      
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: responseText,
-        sender: "ai",
-        timestamp: new Date(),
-        category,
-      };
-
-      setMessages(prev => [...prev, aiMessage]);
+      const responseText = await sendToGeminiAPI(tempInput, [...messages, userMessage]);
+      setMessages(prev => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          content: responseText,
+          sender: "ai",
+          timestamp: new Date(),
+          category
+        }
+      ]);
     } catch (error) {
-      console.error("Error sending message:", error);
-      toast.error("Failed to get a response. Please try again.");
+      console.error("Chat error:", error);
+      toast.error("Sorry, try again");
+      setMessages(prev => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          content: "Sorry, I had trouble responding. Please try again.",
+          sender: "ai",
+          timestamp: new Date()
+        }
+      ]);
     } finally {
       setIsLoading(false);
-      if (inputRef.current) {
-        inputRef.current.focus();
-      }
+      inputRef.current?.focus();
     }
   };
 
@@ -294,62 +286,30 @@ const ChatV2Page: React.FC = () => {
     const newCategory = e.target.value as GuidanceCategory;
     setCategory(newCategory);
     
-    // Send a message to the API indicating the category change
-    sendCategoryChangePrompt(newCategory);
+    const systemMessage: Message = {
+      id: `cat-${Date.now()}`,
+      content: `🔄 Switched to ${getCategoryDisplayName(newCategory)} mode`,
+      sender: "ai",
+      timestamp: new Date(),
+      category: newCategory
+    };
+    
+    setMessages(prev => [...prev, systemMessage]);
   };
 
-  const sendCategoryChangePrompt = async (newCategory: GuidanceCategory) => {
-    if (!user) return;
-    
-    setIsLoading(true);
-    
-    try {
-      // Indicate to the user that we're changing focus
-      const systemMessage: Message = {
-        id: Date.now().toString(),
-        content: `Switching to ${getCategoryDisplayName(newCategory)} mode...`,
-        sender: "ai",
-        timestamp: new Date(),
-        category: newCategory,
-      };
-      
-      setMessages(prev => [...prev, systemMessage]);
-      
-      // Get information about the new category
-      const prompt = `Please provide a brief introduction about how you can help with ${newCategory} related questions.`;
-      
-      // Get response from Gemini API with the new category context
-      const responseText = await sendToGeminiAPI(prompt, [], newCategory);
-      
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: responseText,
-        sender: "ai",
-        timestamp: new Date(),
-        category: newCategory,
-      };
-
-      setMessages(prev => [...prev, aiMessage]);
-    } catch (error) {
-      console.error("Error sending category change prompt:", error);
-      toast.error("Failed to update guidance mode. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  // Helper function to get a display name for the category
+  // **FIXED**: Added all possible GuidanceCategory values including 'wellbeing'
   const getCategoryDisplayName = (cat: GuidanceCategory): string => {
-    switch (cat) {
-      case "academic": return "Academic Support";
-      case "career": return "Career Advice";
-      case "mental_health": return "Mental Health Support";
-      case "stress_management": return "Stress Management";
-      default: return "General Guidance";
-    }
+    const names: Record<GuidanceCategory, string> = {
+      general: "General Guidance",
+      academic: "Academic Support",
+      career: "Career Advice",
+      mental_health: "Mental Health",
+      stress_management: "Stress Management",
+      wellbeing: "Wellbeing Support" // Added missing wellbeing
+    };
+    return names[cat] || "General";
   };
 
-  // If checking auth, show loading
   if (isCheckingAuth) {
     return (
       <div className="container mx-auto px-3 md:px-4 py-4 md:py-8 mt-16 md:mt-20">
@@ -360,27 +320,20 @@ const ChatV2Page: React.FC = () => {
     );
   }
 
-  // If not authenticated, show a sign-in prompt
   if (!user) {
     return (
       <div className="container mx-auto px-3 md:px-4 py-4 md:py-8 mt-16 md:mt-20">
-        <Helmet>
-          <title>Chat with Rafiki AI | Your AI Guidance Counselor</title>
-        </Helmet>
-        
-        <h1 className="text-2xl md:text-3xl font-semibold mb-3 md:mb-6 text-center">Chat with Rafiki</h1>
-        
-        <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-6">
-          <div className="text-center p-6">
-            <div className="bg-gray-100 p-4 rounded-full mx-auto mb-4 w-16 h-16 flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-              </svg>
-            </div>
-            <h3 className="text-lg font-medium mb-2">Please sign in to use the chat feature</h3>
-            <p className="text-gray-500 mb-4">Sign in to get personalized guidance from Rafiki AI</p>
+        <Helmet><title>Chat with Rafiki AI</title></Helmet>
+        <h1 className="text-2xl md:text-3xl font-semibold mb-6 text-center">Chat with Rafiki</h1>
+        <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-6 text-center">
+          <div className="bg-gray-100 p-4 rounded-full mx-auto mb-4 w-16 h-16 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
           </div>
+          <h3 className="text-lg font-medium mb-2">Please sign in</h3>
+          <p className="text-gray-500">Sign in for personalized AI guidance</p>
         </div>
       </div>
     );
@@ -388,64 +341,59 @@ const ChatV2Page: React.FC = () => {
 
   return (
     <div className="container mx-auto px-3 md:px-4 py-4 md:py-8 mt-16 md:mt-20">
-      <Helmet>
-        <title>Chat with Rafiki AI | Your AI Guidance Counselor</title>
-      </Helmet>
+      <Helmet><title>Chat with Rafiki AI | Your AI Guidance Counselor</title></Helmet>
       
       <h1 className="text-2xl md:text-3xl font-semibold mb-3 md:mb-6 text-center">Chat with Rafiki</h1>
-      <p className="text-center text-gray-600 mb-4 md:mb-8 text-sm md:text-base px-2">
-        Ask Rafiki about career guidance, academic advice, or wellbeing support.
+      <p className="text-center text-gray-600 mb-8 text-sm md:text-base px-2">
+        Ask about career guidance, academic advice, or wellbeing support
       </p>
-      
+
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
-        {/* Chat header with category selection */}
         <div className="bg-rafiki-50 p-4 border-b">
           <div className="flex justify-between items-center">
-            <h2 className="text-lg font-medium text-rafiki-800">Conversation</h2>
+            <h2 className="text-lg font-medium text-rafiki-800">Rafiki AI</h2>
             <select 
-              value={category}
-              onChange={handleCategoryChange}
-              className="p-2 border rounded-md text-sm"
+              value={category} 
+              onChange={handleCategoryChange} 
+              disabled={isLoading}
+              className="p-2 border rounded-md text-sm bg-white"
             >
-              <option value="general">General Guidance</option>
-              <option value="career">Career Advice</option>
-              <option value="academic">Academic Support</option>
+              <option value="general">General</option>
+              <option value="career">Career</option>
+              <option value="academic">Academic</option>
               <option value="mental_health">Mental Health</option>
-              <option value="stress_management">Stress Management</option>
+              <option value="stress_management">Stress</option>
+              <option value="wellbeing">Wellbeing</option>
             </select>
           </div>
         </div>
-        
-        {/* Chat messages */}
+
         <div className="h-[60vh] overflow-y-auto p-4 bg-gray-50">
           {messages.length === 0 ? (
             <div className="flex h-full items-center justify-center text-gray-500">
-              <p>Start a conversation with Rafiki</p>
+              <p>Loading Rafiki...</p>
             </div>
           ) : (
             <div className="space-y-4">
               {messages.map((message) => (
-                <div 
-                  key={message.id} 
-                  className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
-                >
-                  <div 
-                    className={`max-w-[75%] rounded-lg p-3 ${
-                      message.sender === "user" 
-                        ? "bg-rafiki-600 text-white rounded-tr-none" 
-                        : "bg-white border border-gray-200 text-gray-800 rounded-tl-none shadow-sm"
-                    }`}
-                  >
+                <div key={message.id} className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}>
+                  <div className={`max-w-[75%] rounded-lg p-3 ${
+                    message.sender === "user" 
+                      ? "bg-rafiki-600 text-white rounded-tr-none" 
+                      : "bg-white border border-gray-200 text-gray-800 rounded-tl-none shadow-sm"
+                  }`}>
                     <p className="whitespace-pre-wrap">{message.content}</p>
-                    <p className={`text-xs mt-1 ${message.sender === "user" ? "text-rafiki-100" : "text-gray-500"}`}>
-                      {message.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                    <p className={`text-xs mt-1 ${
+                      message.sender === "user" ? "text-rafiki-100" : "text-gray-500"
+                    }`}>
+                      {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
                 </div>
               ))}
               {isLoading && (
                 <div className="flex justify-start">
-                  <div className="max-w-[75%] rounded-lg p-3 bg-white border border-gray-200 text-gray-800 rounded-tl-none shadow-sm">
+                  <div className="max-w-[75%] rounded-lg p-3 bg-white border border-gray-200 rounded-tl-none shadow-sm">
                     <div className="flex space-x-2">
                       <div className="w-2 h-2 rounded-full bg-rafiki-400 animate-bounce"></div>
                       <div className="w-2 h-2 rounded-full bg-rafiki-500 animate-bounce [animation-delay:0.2s]"></div>
@@ -458,25 +406,24 @@ const ChatV2Page: React.FC = () => {
             </div>
           )}
         </div>
-        
-        {/* Input area */}
+
         <div className="border-t border-gray-200 p-4 bg-white">
           <div className="flex space-x-2">
             <Input
               ref={inputRef}
               value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
+              onChange={e => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Type your message..."
+              placeholder={isLoading ? "Rafiki is typing..." : "Type your message..."}
               disabled={isLoading}
               className="flex-1"
             />
             <Button 
               onClick={handleSend} 
-              disabled={isLoading || !inputValue.trim()}
-              className="bg-rafiki-600 hover:bg-rafiki-700"
+              disabled={isLoading || !inputValue.trim()} 
+              className="bg-rafiki-600 hover:bg-rafiki-700 min-w-[70px]"
             >
-              Send
+              {isLoading ? "..." : "Send"}
             </Button>
           </div>
         </div>
@@ -485,4 +432,4 @@ const ChatV2Page: React.FC = () => {
   );
 };
 
-export default ChatV2Page; 
+export default ChatV2Page;

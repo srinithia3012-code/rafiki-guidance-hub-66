@@ -48,6 +48,9 @@ const AIWellbeingChat = ({ moodRating }: { moodRating?: number | null }) => {
   // Category is fixed to mental_health for wellbeing chat
   const category: GuidanceCategory = "mental_health";
   
+  // ✅ FIXED: Use current model name (gemini-1.5-flash is deprecated)
+  const MODEL_NAME = "gemini-2.5-flash";
+  
   // Send initial welcome message when component mounts
   useEffect(() => {
     if (user && messages.length === 0) {
@@ -79,7 +82,6 @@ const AIWellbeingChat = ({ moodRating }: { moodRating?: number | null }) => {
         5: "I'm feeling great! Any tips to maintain this positivity?"
       };
       
-      // Set the initial message based on mood rating
       const initialMessage = moodMessages[moodRating as keyof typeof moodMessages];
       if (initialMessage) {
         setInputValue(initialMessage);
@@ -170,9 +172,9 @@ const AIWellbeingChat = ({ moodRating }: { moodRating?: number | null }) => {
     };
 
     try {
-      // Make the API request
+      // ✅ FIXED: Updated URL with current model name
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${apiKey}`,
         {
           method: "POST",
           headers: {
@@ -204,12 +206,9 @@ const AIWellbeingChat = ({ moodRating }: { moodRating?: number | null }) => {
 
   // Format response text to remove asterisks and other markdown formatting
   const formatResponseText = (text: string): string => {
-    // Replace markdown headings/formatting indicators
     let formattedText = text
-      // Remove asterisks used for emphasis/bold
       .replace(/\*\*/g, '')
       .replace(/\*/g, '')
-      // Replace markdown bullets with clean bullets
       .replace(/\* /g, '• ');
     
     return formattedText;
@@ -223,7 +222,6 @@ const AIWellbeingChat = ({ moodRating }: { moodRating?: number | null }) => {
     try {
       const initialPrompt = "Tell me briefly about how you can support me with mental health and wellbeing issues.";
       
-      // Get response from Gemini API
       const responseText = await sendToGeminiAPI(initialPrompt, messages);
       
       const aiMessage: Message = {
@@ -259,7 +257,6 @@ const AIWellbeingChat = ({ moodRating }: { moodRating?: number | null }) => {
     setIsLoading(true);
 
     try {
-      // Get response from Gemini API
       const responseText = await sendToGeminiAPI(content, [...messages, userMessage]);
       
       const aiMessage: Message = {
@@ -282,7 +279,6 @@ const AIWellbeingChat = ({ moodRating }: { moodRating?: number | null }) => {
   const handleSend = async () => {
     if (!inputValue.trim()) return;
     
-    // Check if user is authenticated
     if (!user) {
       toast.error("Please sign in to use the chat feature");
       return;
@@ -301,7 +297,6 @@ const AIWellbeingChat = ({ moodRating }: { moodRating?: number | null }) => {
     setIsLoading(true);
 
     try {
-      // Get response from Gemini API
       const responseText = await sendToGeminiAPI(inputValue, [...messages, userMessage]);
       
       const aiMessage: Message = {
@@ -332,7 +327,6 @@ const AIWellbeingChat = ({ moodRating }: { moodRating?: number | null }) => {
   };
   
   const clearChat = () => {
-    // Create welcome message
     const welcomeMessage: Message = {
       id: "welcome",
       content: "Hello! I'm Rafiki, your AI wellbeing assistant. How are you feeling today?",
@@ -381,48 +375,48 @@ const AIWellbeingChat = ({ moodRating }: { moodRating?: number | null }) => {
                 </div>
               ) : (
                 <div className="space-y-4">
-              {messages.map((message) => (
-                <div key={message.id} className={`mb-4 flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[80%] rounded-lg p-3 ${
-                    message.sender === 'user' 
-                      ? 'bg-primary text-white rounded-tr-none' 
-                      : 'bg-gray-100 rounded-tl-none'
-                  }`}>
-                    {message.sender === 'ai' && (
-                      <div className="flex items-center mb-1">
-                        <Heart className="h-4 w-4 text-rose-500 mr-1" />
-                        <span className="text-xs font-medium text-rose-500">Rafiki</span>
-                        <span className="text-xs text-gray-500 ml-2">
-                          {new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                        </span>
+                  {messages.map((message) => (
+                    <div key={message.id} className={`mb-4 flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[80%] rounded-lg p-3 ${
+                        message.sender === 'user' 
+                          ? 'bg-primary text-white rounded-tr-none' 
+                          : 'bg-gray-100 rounded-tl-none'
+                      }`}>
+                        {message.sender === 'ai' && (
+                          <div className="flex items-center mb-1">
+                            <Heart className="h-4 w-4 text-rose-500 mr-1" />
+                            <span className="text-xs font-medium text-rose-500">Rafiki</span>
+                            <span className="text-xs text-gray-500 ml-2">
+                              {new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                            </span>
+                          </div>
+                        )}
+                        <div className={`text-sm ${message.sender === 'user' ? 'text-white' : 'text-gray-800'}`}>
+                          {message.content}
+                        </div>
+                        {message.sender === 'user' && (
+                          <div className="flex justify-end mt-1">
+                            <span className="text-xs text-white/70">
+                              {new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                            </span>
+                          </div>
+                        )}
                       </div>
-                    )}
-                    <div className={`text-sm ${message.sender === 'user' ? 'text-white' : 'text-gray-800'}`}>
-                      {message.content}
                     </div>
-                    {message.sender === 'user' && (
-                      <div className="flex justify-end mt-1">
-                        <span className="text-xs text-white/70">
-                          {new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                        </span>
+                  ))}
+                  {isLoading && (
+                    <div className="flex justify-start mb-4">
+                      <div className="bg-gray-100 rounded-lg rounded-tl-none p-3 max-w-[80%]">
+                        <div className="flex items-center mb-1">
+                          <Heart className="h-4 w-4 text-rose-500 mr-1" />
+                          <span className="text-xs font-medium text-rose-500">Rafiki</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                        </div>
                       </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-              {isLoading && (
-                <div className="flex justify-start mb-4">
-                  <div className="bg-gray-100 rounded-lg rounded-tl-none p-3 max-w-[80%]">
-                    <div className="flex items-center mb-1">
-                      <Heart className="h-4 w-4 text-rose-500 mr-1" />
-                      <span className="text-xs font-medium text-rose-500">Rafiki</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                    </div>
-                  </div>
                     </div>
                   )}
                 </div>
