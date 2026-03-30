@@ -106,6 +106,8 @@ Rafiki AI is a comprehensive student support platform designed to provide person
    VITE_SUPABASE_URL=your_supabase_project_url
    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
    VITE_OPENAI_API_KEY=your_openai_api_key
+   VITE_GEMINI_API_KEY=your_gemini_api_key
+   VITE_GOOGLE_API_KEY=your_google_api_key
    ```
    These environment variables are required to connect the application with Supabase and OpenAI services.
 
