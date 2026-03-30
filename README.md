@@ -109,13 +109,18 @@ Rafiki AI is a comprehensive student support platform designed to provide person
    ```
    These environment variables are required to connect the application with Supabase and OpenAI services.
 
-5. Run the Project
+5. Push Database Schema
+   ```bash
+   supabase db push
+   ```
+
+6. Run the Project
    ```bash
    npm run dev
    ```
    Then open `http://localhost:8080`.
 
-6. Push Changes to GitHub
+7. Push Changes to GitHub
    ```bash
    git status -sb
    git add -A
