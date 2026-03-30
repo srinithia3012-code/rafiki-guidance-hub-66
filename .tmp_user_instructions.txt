@@ -1,0 +1,49 @@
+PROJECT TITLE: MENTAL HEALTH FORUM
+Step 1: Installation
+Clone the project from the GitHub repository to your local system.
+ git clone <repository_url>
+Step 2: Open in VS Code
+Navigate to the project folder and open it in Visual Studio Code using the following command:
+ code .
+Step 3: Install Dependencies
+Install the required project dependencies using the following command:
+ npm install
+This command installs all necessary packages listed in the package.json file.
+Step 4: Configure Environment Variables
+Create a .env file in the root directory of the project and add the following environment
+variables:
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_OPENAI_API_KEY=your_openai_api_key
+These environment variables are required to connect the application with Supabase and OpenAI
+services.
+How to Find Environment Variables
+1. VITE_SUPABASE_URL
+Steps:
+1. Go to https://supabase.com
+2. Log in to your Supabase account
+3. Select your project
+4. In the left sidebar, click Project Settings
+5. Go to API
+6. Under Project URL, copy the URL
+Use it as:
+VITE_SUPABASE_URL=https://your-project-id.supabase.co
+2. VITE_SUPABASE_ANON_KEY
+Steps:
+1. Open your Supabase Project
+2. Navigate to Project Settings ? API
+3. Under Project API Keys
+4. Copy the anon public key
+Use it as:
+ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+This key is safe for frontend use but should still not be shared publicly.
+3. VITE_OPENAI_API_KEY
+Steps:
+1. Go to https://platform.openai.com
+2. Sign in to your OpenAI account
+3. Click your profile icon ? View API keys
+4. Click Create new secret key
+5. Copy the generated API key
+Use it as:
+ VITE_OPENAI_API_KEY=your_openai_api_key
+?? Keep this key private and do not commit it to GitHub.
